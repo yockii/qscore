@@ -22,7 +22,7 @@ const (
 
 var DB *xorm.Engine
 
-func InitDB(dbType, host, user, password, dbName string, port int) {
+func InitDB(dbType, host, user, password, dbName string, port int, prefix string, showSql bool, logLevel string) {
 	var err error
 	DB, err = initDB(dbType, host, user, password, dbName, port)
 	if err != nil {
@@ -31,15 +31,15 @@ func InitDB(dbType, host, user, password, dbName string, port int) {
 	if err = DB.Ping(); err != nil {
 		logger.Fatalf("数据库连接失败! %v", err)
 	}
-	if config.IsSet("database.prefix") {
-		DB.SetTableMapper(names.NewPrefixMapper(names.SnakeMapper{}, config.GetString("database.prefix")))
+	if prefix != "" {
+		DB.SetTableMapper(names.NewPrefixMapper(names.SnakeMapper{}, prefix))
 	}
 
-	if config.GetBool("database.showSql") {
+	if showSql {
 		DB.ShowSQL(true)
 	}
-	if config.IsSet("log.level") {
-		switch strings.ToLower(config.GetString("log.level")) {
+	if logLevel != "" {
+		switch strings.ToLower(logLevel) {
 		case "error":
 			DB.SetLogLevel(log.LOG_ERR)
 		case "warn":
@@ -53,6 +53,20 @@ func InitDB(dbType, host, user, password, dbName string, port int) {
 		}
 	}
 
+}
+
+func InitSysDB() {
+	InitDB(
+		config.GetString("database.driver"),
+		config.GetString("database.host"),
+		config.GetString("database.user"),
+		config.GetString("database.password"),
+		config.GetString("database.db"),
+		config.GetInt("database.port"),
+		config.GetString("database.prefix"),
+		config.GetBool("database.showSql"),
+		config.GetString("log.level"),
+	)
 }
 
 func initDB(dbType string, host string, user string, password string, dbName string, port int) (*xorm.Engine, error) {
@@ -80,6 +94,6 @@ func initDB(dbType string, host string, user string, password string, dbName str
 	}
 }
 
-func CloseDB() {
+func Close() {
 	_ = DB.Close()
 }

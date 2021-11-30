@@ -14,3 +14,6 @@ func (c *memoryCacher) GetString(s string) (string, error) {
 func (*memoryCacher) Type() string {
 	return "memory"
 }
+func (c *memoryCacher) Close() {
+	c.store = make(map[string]string)
+}

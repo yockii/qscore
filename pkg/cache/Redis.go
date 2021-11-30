@@ -1,6 +1,10 @@
 package cache
 
-import "github.com/gomodule/redigo/redis"
+import (
+	"github.com/gomodule/redigo/redis"
+
+	"github.com/yockii/qscore/pkg/logger"
+)
 
 type redisCacher struct {
 	redisPrefix string
@@ -19,4 +23,9 @@ func (c *redisCacher) GetString(key string) (string, error) {
 
 func (*redisCacher) Type() string {
 	return "redis"
+}
+func (c *redisCacher) Close() {
+	if err := c.redisPool.Close(); err != nil {
+		logger.Error(err)
+	}
 }

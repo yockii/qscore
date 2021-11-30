@@ -5,6 +5,7 @@ import (
 	"github.com/casbin/casbin/v2/model"
 	"xorm.io/xorm"
 
+	"github.com/yockii/qscore/pkg/constant"
 	"github.com/yockii/qscore/pkg/database"
 	"github.com/yockii/qscore/pkg/logger"
 )
@@ -18,7 +19,7 @@ var defaultService *authorizationService
 
 func init() {
 	defaultService = &authorizationService{
-		superAdmin: "超级管理员",
+		superAdmin: constant.DefaultRoleName,
 	}
 	if err := defaultService.Initial(database.DB); err != nil {
 		logger.Panicf("初始化默认权限系统失败，系统不应在无权限安全保护状态下运行", err)

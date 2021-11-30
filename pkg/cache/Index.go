@@ -10,6 +10,7 @@ import (
 
 type cacher interface {
 	Type() string
+	Close()
 	GetString(string) (string, error)
 }
 
@@ -28,6 +29,7 @@ func UseMemory() {
 	var c cacher = &memoryCacher{}
 	cacheInstance.mc = c
 }
+
 func UseRedis(redisPrefix, host, password string, port, maxIdle, maxActive int) {
 	var rc cacher = &redisCacher{
 		redisPrefix: redisPrefix,
@@ -52,6 +54,15 @@ func UseRedis(redisPrefix, host, password string, port, maxIdle, maxActive int) 
 		},
 	}
 	cacheInstance.rc = rc
+}
+
+func Close() {
+	if cacheInstance.inMemory {
+		cacheInstance.mc.Close()
+	}
+	if cacheInstance.useRedis {
+		cacheInstance.rc.Close()
+	}
 }
 
 func GetString(key string) (value string, err error) {

@@ -1,5 +1,11 @@
 package domain
 
+const (
+	UserIdPrefix     = "user"
+	RoleIdPrefix     = "role"
+	ResourceIdPrefix = "resource"
+)
+
 type User struct {
 	Id       string `json:"id,omitempty" xorm:"pk varchar(50)"`
 	Username string `json:"username,omitempty" xorm:"index varchar(50) comment('用户名')"`

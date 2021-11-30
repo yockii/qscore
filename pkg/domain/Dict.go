@@ -1,5 +1,9 @@
 package domain
 
+const (
+	DictIdPrefix = "dict"
+)
+
 type Dict struct {
 	Id        string `json:"id,omitempty" xorm:"pk varchar(50)"`
 	DictKey   string `json:"dictKey,omitempty" xorm:"index varchar(50) comment('字典键')"`
