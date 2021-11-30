@@ -81,6 +81,17 @@ func writer(logPath, level string, rotatedNum int) io.Writer {
 	return logier
 }
 
+func SetLevel(level string) error {
+	return defaultLogger.SetLevel(level)
+}
+func SetReportCaller(enable bool) {
+	defaultLogger.SetReportCaller(enable)
+}
+func SetLogDir(dir string, rotateNum int) {
+	defaultLogger.SetLogDir(dir, rotateNum)
+}
+
+//////////////////////////////////////////////////////////////////////////
 func (l *logger) Fatal(args ...interface{}) {
 	l.Logger.Fatal(args...)
 }
