@@ -11,6 +11,7 @@ import (
 type cacher interface {
 	Type() string
 	Close()
+	SetWithExpire(string, interface{}, int) error
 	GetString(string) (string, error)
 }
 
@@ -65,6 +66,15 @@ func Close() {
 	}
 }
 
+func SetWithExpire(key, value string, expireInSecond int) error {
+	if cacheInstance.useRedis {
+		return cacheInstance.rc.SetWithExpire(key, value, expireInSecond)
+	}
+	if cacheInstance.inMemory {
+		return cacheInstance.mc.SetWithExpire(key, value, expireInSecond)
+	}
+	return errors.New("SetWithExpire方法未找到适配器")
+}
 func GetString(key string) (value string, err error) {
 	if cacheInstance.useRedis {
 		return cacheInstance.rc.GetString(key)
@@ -72,5 +82,5 @@ func GetString(key string) (value string, err error) {
 	if cacheInstance.inMemory {
 		return cacheInstance.mc.GetString(key)
 	}
-	return "", errors.New("GetString方法未找到")
+	return "", errors.New("GetString方法未找到适配器")
 }

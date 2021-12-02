@@ -37,3 +37,14 @@ var DateTimeConverter = func(value string) reflect.Value {
 	}
 	return reflect.Value{}
 }
+
+type TimeCondition struct {
+	Start time.Time
+	End   time.Time
+}
+
+type CommonResponse struct {
+	Code int         `json:"code,omitempty"`
+	Msg  string      `json:"msg,omitempty"`
+	Data interface{} `json:"data,omitempty"`
+}
