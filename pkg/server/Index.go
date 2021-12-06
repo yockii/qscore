@@ -79,6 +79,17 @@ func (a *webApp) Shutdown() error {
 	return a.app.Shutdown()
 }
 
+//StandardRouter 标准路由，需要登录、校验权限
+func StandardRouter(prefix string, add, update, delete, get, paginate fiber.Handler) fiber.Router {
+	g := defaultApp.Group(prefix, true, true)
+	g.Post("/", add)
+	g.Put("/", update)
+	g.Delete("/", delete)
+	g.Get("/instance", get)
+	g.Get("/list", paginate)
+	return g
+}
+
 func Group(prefix string, needLogin, needRouterPermission bool) fiber.Router {
 	return defaultApp.Group(prefix, needLogin, needRouterPermission)
 }

@@ -28,7 +28,7 @@ var Jwtware = jwtware.New(jwtware.Config{
 		// 从jwt获取用户信息
 		jwtToken := c.Locals(constant.JWT_CONTEXT).(*jwt.Token)
 		claims := jwtToken.Claims.(jwt.MapClaims)
-		uid := claims["id"].(string)
+		uid := claims["uid"].(string)
 		sid := claims["sid"].(string)
 
 		cachedUid, err := cache.GetString(constant.AppSid + ":" + sid)

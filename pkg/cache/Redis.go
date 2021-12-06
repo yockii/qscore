@@ -14,7 +14,7 @@ type redisCacher struct {
 func (c *redisCacher) SetWithExpire(key string, value interface{}, expireInSecond int) error {
 	redisConn := c.redisPool.Get()
 	defer redisConn.Close()
-	_, err := redisConn.Do("SETEX", key, expireInSecond, value)
+	_, err := redisConn.Do("SETEX", c.redisPrefix+":"+key, expireInSecond, value)
 	if err != redis.ErrNil {
 		return err
 	}
@@ -24,7 +24,7 @@ func (c *redisCacher) SetWithExpire(key string, value interface{}, expireInSecon
 func (c *redisCacher) GetString(key string) (string, error) {
 	redisConn := c.redisPool.Get()
 	defer redisConn.Close()
-	v, err := redis.String(redisConn.Do("GET", key))
+	v, err := redis.String(redisConn.Do("GET", c.redisPrefix+":"+key))
 	if err != nil {
 		return "", err
 	}

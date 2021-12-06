@@ -48,3 +48,10 @@ type CommonResponse struct {
 	Msg  string      `json:"msg,omitempty"`
 	Data interface{} `json:"data,omitempty"`
 }
+
+type Paginate struct {
+	Total  int         `json:"total"`
+	Offset int         `json:"offset"`
+	Limit  int         `json:"limit"`
+	Items  interface{} `json:"items"`
+}

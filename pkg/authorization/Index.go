@@ -17,7 +17,11 @@ type authorizationService struct {
 
 var defaultService *authorizationService
 
-func init() {
+func SetSuperAdmin(admin string) {
+	defaultService.superAdmin = admin
+}
+
+func Init() {
 	defaultService = &authorizationService{
 		superAdmin: constant.DefaultRoleName,
 	}

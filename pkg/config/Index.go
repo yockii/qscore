@@ -10,7 +10,7 @@ type config struct {
 	*viper.Viper
 }
 
-var defaultConfig *config
+var defaultConfig = &config{viper.New()}
 
 func init() {
 	defaultConfig.SetConfigName("config")

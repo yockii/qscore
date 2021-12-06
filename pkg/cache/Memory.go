@@ -29,7 +29,10 @@ func (c *memoryCacher) GetString(key string) (string, error) {
 	if c.store == nil {
 		return "", nil
 	}
-	v := c.store[key]
+	v, hasKey := c.store[key]
+	if !hasKey {
+		return "", nil
+	}
 	if v.expiredAt.Before(time.Now()) {
 		delete(c.store, key)
 		return "", nil
