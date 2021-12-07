@@ -1,11 +1,14 @@
 package server
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 
 	"github.com/yockii/qscore/pkg/domain"
+	"github.com/yockii/qscore/pkg/logger"
 )
 
 type webApp struct {
@@ -38,7 +41,8 @@ func InitWebApp() *webApp {
 	})
 	app.Use(recover.New(recover.Config{
 		EnableStackTrace: true,
-		StackTraceHandler: func(e interface{}) {
+		StackTraceHandler: func(ctx *fiber.Ctx, e interface{}) {
+			logger.Error(e)
 		},
 	}))
 	app.Use(cors.New())
@@ -81,7 +85,11 @@ func (a *webApp) Shutdown() error {
 
 //StandardRouter 标准路由，需要登录、校验权限
 func StandardRouter(prefix string, add, update, delete, get, paginate fiber.Handler) fiber.Router {
-	g := defaultApp.Group(prefix, true, true)
+	return StandardVersionRouter("v1", prefix, add, update, delete, get, paginate)
+}
+
+func StandardVersionRouter(version, prefix string, add, update, delete, get, paginate fiber.Handler) fiber.Router {
+	g := defaultApp.Group(fmt.Sprintf("/api/%s%s", version, prefix), true, true)
 	g.Post("/", add)
 	g.Put("/", update)
 	g.Delete("/", delete)
