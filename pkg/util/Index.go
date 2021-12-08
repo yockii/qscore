@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/xid"
 	"github.com/segmentio/ksuid"
 )
 
@@ -12,6 +13,11 @@ var CstZone = time.FixedZone("CST", 8*3600) // 东八
 
 func GenerateDatabaseID() string {
 	uid := ksuid.New()
+	return uid.String()
+}
+
+func GenerateRequestID() string {
+	uid := xid.New()
 	return uid.String()
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/template/html"
 
 	"github.com/yockii/qscore/pkg/domain"
 	"github.com/yockii/qscore/pkg/logger"
@@ -19,7 +20,7 @@ var defaultApp *webApp
 
 func init() {
 	initFiberParser()
-	defaultApp = InitWebApp()
+	defaultApp = InitWebApp(html.New("./views", ".html"))
 }
 
 func initFiberParser() {
@@ -34,10 +35,11 @@ func initFiberParser() {
 	})
 }
 
-func InitWebApp() *webApp {
+func InitWebApp(views fiber.Views) *webApp {
 	initFiberParser()
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
+		Views:                 views,
 	})
 	app.Use(recover.New(recover.Config{
 		EnableStackTrace: true,
@@ -50,6 +52,11 @@ func InitWebApp() *webApp {
 	return &webApp{app}
 }
 
+func (a *webApp) Static(dir string) {
+	a.app.Static("/", dir, fiber.Static{
+		Compress: true,
+	})
+}
 func (a *webApp) Group(prefix string, needLogin, needRouterPermission bool) fiber.Router {
 	var handlers []fiber.Handler
 	if needLogin {
@@ -58,7 +65,6 @@ func (a *webApp) Group(prefix string, needLogin, needRouterPermission bool) fibe
 	if needRouterPermission {
 		handlers = append(handlers, RequireRouterPermission())
 	}
-
 	return a.app.Group(prefix, handlers...)
 }
 func (a *webApp) All(path string, handlers ...fiber.Handler) fiber.Router {
@@ -81,6 +87,10 @@ func (a *webApp) Start(addr string) error {
 }
 func (a *webApp) Shutdown() error {
 	return a.app.Shutdown()
+}
+
+func Static(dir string) {
+	defaultApp.Static(dir)
 }
 
 //StandardRouter 标准路由，需要登录、校验权限

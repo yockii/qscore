@@ -3,6 +3,7 @@ package domain
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -19,7 +20,8 @@ func (t DateTime) MarshalJSON() ([]byte, error) {
 
 func (t *DateTime) UnmarshalJSON(data []byte) error {
 	s := string(data)
-	if s == "null" {
+	s = strings.Replace(s, "\"", "", -1)
+	if s == "null" || s == "" {
 		*t = DateTime(time.Time{})
 		return nil
 	}
