@@ -41,8 +41,8 @@ var DateTimeConverter = func(value string) reflect.Value {
 }
 
 type TimeCondition struct {
-	Start time.Time
-	End   time.Time
+	Start DateTime `json:"start"`
+	End   DateTime `json:"end"`
 }
 
 type CommonResponse struct {
