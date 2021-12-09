@@ -34,16 +34,16 @@ func init() {
 }
 
 type UserRequest struct {
-	*User
+	User
 	CreateTimeRange *TimeCondition `json:"createTimeRange,omitempty"`
 }
 
 type RoleRequest struct {
-	*Role
+	Role
 	CreateTimeRange *TimeCondition `json:"createTimeRange,omitempty"`
 }
 
 type ResourceRequest struct {
-	*Resource
+	Resource
 	CreateTimeRange *TimeCondition `json:"createTimeRange,omitempty"`
 }

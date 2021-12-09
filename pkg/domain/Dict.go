@@ -18,6 +18,6 @@ func init() {
 }
 
 type DictRequest struct {
-	*Dict
+	Dict
 	CreateTimeRange *TimeCondition `json:"createTimeRange,omitempty"`
 }
