@@ -13,6 +13,10 @@ var DateTimeFormat = "2006-01-02 15:04:05"
 
 type DateTime time.Time
 
+func (t DateTime) IsZero() bool {
+	return time.Time(t).IsZero()
+}
+
 func (t DateTime) MarshalJSON() ([]byte, error) {
 	s := fmt.Sprintf("\"%s\"", time.Time(t).Format(DateTimeFormat))
 	return []byte(s), nil
