@@ -50,7 +50,7 @@ type TimeCondition struct {
 }
 
 type CommonResponse struct {
-	Code int         `json:"code,omitempty"`
+	Code int         `json:"code"`
 	Msg  string      `json:"msg,omitempty"`
 	Data interface{} `json:"data,omitempty"`
 }
