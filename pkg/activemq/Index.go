@@ -8,12 +8,9 @@ import (
 	"github.com/Azure/go-amqp"
 )
 
-var ActiveMQ = &activeMqNew{
-	handlers: make(map[string]func([]byte) error),
-	senders:  make(map[string]*amqp.Sender),
-}
+var defaultActiveMq = NewActiveMq()
 
-type activeMqNew struct {
+type activeMq struct {
 	address   string
 	username  string
 	password  string
@@ -29,11 +26,18 @@ type activeMqNew struct {
 	senders   map[string]*amqp.Sender
 }
 
-func (mq *activeMqNew) RegisterHandlers(queue string, handler func([]byte) error) {
+func NewActiveMq() *activeMq {
+	return &activeMq{
+		handlers: make(map[string]func([]byte) error),
+		senders:  make(map[string]*amqp.Sender),
+	}
+}
+
+func (mq *activeMq) RegisterHandlers(queue string, handler func([]byte) error) {
 	mq.handlers[queue] = handler
 }
 
-func (mq *activeMqNew) Send(queue string, data []byte, delay int64) error {
+func (mq *activeMq) Send(queue string, data []byte, delay int64) error {
 	sender, ok := mq.senders[queue]
 	var err error
 	if !ok {
@@ -67,7 +71,7 @@ func (mq *activeMqNew) Send(queue string, data []byte, delay int64) error {
 	return nil
 }
 
-func (mq *activeMqNew) reinit() {
+func (mq *activeMq) reinit() {
 	mq.lock.Lock()
 	defer mq.lock.Unlock()
 	if mq.inited {
@@ -86,13 +90,13 @@ func (mq *activeMqNew) reinit() {
 	}
 }
 
-func (mq *activeMqNew) InitWithUsernamePassword(username, password string) error {
+func (mq *activeMq) InitWithUsernamePassword(username, password string) error {
 	mq.username = username
 	mq.password = password
 	return mq.Init()
 }
 
-func (mq *activeMqNew) Init() error {
+func (mq *activeMq) Init() error {
 	if mq.inited {
 		return nil
 	}
@@ -129,7 +133,7 @@ func (mq *activeMqNew) Init() error {
 	return nil
 }
 
-func (mq *activeMqNew) StartRead() {
+func (mq *activeMq) StartRead() {
 	// 处理注册的handlers
 	for queue, _ := range mq.handlers {
 		go mq.read(queue)
@@ -145,7 +149,7 @@ func (mq *activeMqNew) StartRead() {
 	}
 }
 
-func (mq *activeMqNew) Close() error {
+func (mq *activeMq) Close() error {
 	mq.started = false
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -157,7 +161,7 @@ func (mq *activeMqNew) Close() error {
 	return mq.client.Close()
 }
 
-func (mq *activeMqNew) createNewSession() error {
+func (mq *activeMq) createNewSession() error {
 	session, err := mq.client.NewSession()
 	if err != nil {
 		return err
@@ -166,7 +170,7 @@ func (mq *activeMqNew) createNewSession() error {
 	return nil
 }
 
-func (mq *activeMqNew) read(queue string) {
+func (mq *activeMq) read(queue string) {
 	ctx := context.Background()
 
 	receiver, err := mq.session.NewReceiver(
@@ -201,11 +205,31 @@ func (mq *activeMqNew) read(queue string) {
 	}
 }
 
-func (mq *activeMqNew) safeSendError(err error, ec chan error) {
+func (mq *activeMq) safeSendError(err error, ec chan error) {
 	defer func() {
 		if recover() != nil {
 		}
 	}()
 	ec <- err
 	close(ec)
+}
+
+////////////////////////////////////////////////////////////////////////////
+func RegisterHandlers(queue string, handler func([]byte) error) {
+	defaultActiveMq.RegisterHandlers(queue, handler)
+}
+func Send(queue string, data []byte, delay int64) error {
+	return defaultActiveMq.Send(queue, data, delay)
+}
+func InitWithUsernamePassword(username, password string) error {
+	return defaultActiveMq.InitWithUsernamePassword(username, password)
+}
+func Init() error {
+	return defaultActiveMq.Init()
+}
+func StartRead() {
+	defaultActiveMq.StartRead()
+}
+func Close() error {
+	return defaultActiveMq.Close()
 }
