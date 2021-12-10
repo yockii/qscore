@@ -101,6 +101,9 @@ func (s *authorizationService) RemoveSubjectGroups(subject, tenantId string) (bo
 func (s *authorizationService) RemoveSubjectResources(subject string) (bool, error) {
 	return s.enforcer.DeletePermissionsForUser(subject)
 }
+func (s *authorizationService) GetSubjectResources(subject, tenantId string) [][]string {
+	return s.enforcer.GetPermissionsForUserInDomain(subject, tenantId)
+}
 
 func AddSubjectResource(subject string, resourceTarget, action, tenantId, resourceId string) (bool, error) {
 	return defaultService.AddSubjectResource(subject, resourceTarget, action, tenantId, resourceId)
@@ -128,4 +131,7 @@ func RemoveSubjectGroups(subject, tenantId string) (bool, error) {
 }
 func RemoveSubjectResources(subject string) (bool, error) {
 	return defaultService.RemoveSubjectResources(subject)
+}
+func GetSubjectResources(subject, tenantId string) [][]string {
+	return defaultService.GetSubjectResources(subject, tenantId)
 }
