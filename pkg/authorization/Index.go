@@ -96,6 +96,18 @@ func (s *authorizationService) CheckSubjectPermissions(subject, resource, action
 	return ok
 }
 func (s *authorizationService) RemoveSubjectGroups(subject, tenantId string) (bool, error) {
+	super, rids, err := s.GetSubjectResourceIds(subject, tenantId)
+	if err != nil {
+		return false, err
+	}
+	if !super {
+		for _, rid := range rids {
+			s.RemoveSubjectGroup(subject, rid, tenantId)
+		}
+	}
+	return true, nil
+}
+func (s *authorizationService) RemoveSubjectResources(subject, tenantId string) (bool, error) {
 	rids, err := s.GetSubjectGroupIds(subject, tenantId)
 	if err != nil {
 		return false, err
