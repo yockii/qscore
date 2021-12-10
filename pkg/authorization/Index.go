@@ -96,26 +96,10 @@ func (s *authorizationService) CheckSubjectPermissions(subject, resource, action
 	return ok
 }
 func (s *authorizationService) RemoveSubjectGroups(subject, tenantId string) (bool, error) {
-	super, rids, err := s.GetSubjectResourceIds(subject, tenantId)
-	if err != nil {
-		return false, err
-	}
-	if !super {
-		for _, rid := range rids {
-			s.RemoveSubjectGroup(subject, rid, tenantId)
-		}
-	}
-	return true, nil
+	return s.enforcer.DeleteRolesForUserInDomain(subject, tenantId)
 }
-func (s *authorizationService) RemoveSubjectResources(subject, tenantId string) (bool, error) {
-	rids, err := s.GetSubjectGroupIds(subject, tenantId)
-	if err != nil {
-		return false, err
-	}
-	for _, rid := range rids {
-		s.RemoveSubjectGroup(subject, rid, tenantId)
-	}
-	return true, nil
+func (s *authorizationService) RemoveSubjectResources(subject string) (bool, error) {
+	return s.enforcer.DeletePermissionsForUser(subject)
 }
 
 func AddSubjectResource(subject string, resourceTarget, action, tenantId, resourceId string) (bool, error) {
@@ -141,4 +125,7 @@ func CheckSubjectPermissions(subject, resource, action, tenantId string) bool {
 }
 func RemoveSubjectGroups(subject, tenantId string) (bool, error) {
 	return defaultService.RemoveSubjectGroups(subject, tenantId)
+}
+func RemoveSubjectResources(subject string) (bool, error) {
+	return defaultService.RemoveSubjectResources(subject)
 }
