@@ -77,22 +77,28 @@ func (mq *activeMq) reinit() {
 	if mq.inited {
 		return
 	}
-	mq.Close()
+	_ = mq.Close()
 	err := mq.Init()
 	for err != nil {
-		mq.Close()
+		_ = mq.Close()
 		err = mq.Init()
 	}
-	for q, _ := range mq.senders {
+	for q := range mq.senders {
 		var opts []amqp.LinkOption
 		opts = append(opts, amqp.LinkTargetAddress(q))
 		mq.senders[q], _ = mq.session.NewSender(opts...)
 	}
 }
 
-func (mq *activeMq) InitWithUsernamePassword(username, password string) error {
+func (mq *activeMq) InitWithUsernamePassword(address, username, password string) error {
+	mq.address = address
 	mq.username = username
 	mq.password = password
+	return mq.Init()
+}
+
+func (mq *activeMq) InitWithAddress(address string) error {
+	mq.address = address
 	return mq.Init()
 }
 
@@ -135,7 +141,7 @@ func (mq *activeMq) Init() error {
 
 func (mq *activeMq) StartRead() {
 	// 处理注册的handlers
-	for queue, _ := range mq.handlers {
+	for queue := range mq.handlers {
 		go mq.read(queue)
 	}
 	mq.started = true
@@ -155,9 +161,9 @@ func (mq *activeMq) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	for _, sender := range mq.senders {
-		sender.Close(ctx)
+		_ = sender.Close(ctx)
 	}
-	mq.session.Close(ctx)
+	_ = mq.session.Close(ctx)
 	return mq.client.Close()
 }
 
@@ -182,9 +188,9 @@ func (mq *activeMq) read(queue string) {
 		return
 	}
 	defer func() {
-		c, cancel := context.WithTimeout(ctx, time.Second)
+		c, cancel := context.WithTimeout(ctx, 1*time.Second)
 		if receiver != nil {
-			receiver.Close(c)
+			_ = receiver.Close(c)
 		}
 		cancel()
 	}()
@@ -198,9 +204,9 @@ func (mq *activeMq) read(queue string) {
 		}
 		e := mq.handlers[queue](msg.GetData())
 		if e != nil {
-			receiver.ReleaseMessage(ctx, msg)
+			_ = receiver.ReleaseMessage(ctx, msg)
 		} else {
-			receiver.AcceptMessage(ctx, msg)
+			_ = receiver.AcceptMessage(ctx, msg)
 		}
 	}
 }
@@ -215,14 +221,18 @@ func (mq *activeMq) safeSendError(err error, ec chan error) {
 }
 
 ////////////////////////////////////////////////////////////////////////////
+
 func RegisterHandlers(queue string, handler func([]byte) error) {
 	defaultActiveMq.RegisterHandlers(queue, handler)
 }
 func Send(queue string, data []byte, delay int64) error {
 	return defaultActiveMq.Send(queue, data, delay)
 }
-func InitWithUsernamePassword(username, password string) error {
-	return defaultActiveMq.InitWithUsernamePassword(username, password)
+func InitWithUsernamePassword(address, username, password string) error {
+	return defaultActiveMq.InitWithUsernamePassword(address, username, password)
+}
+func InitWithAddress(address string) error {
+	return defaultActiveMq.InitWithAddress(address)
 }
 func Init() error {
 	return defaultActiveMq.Init()
