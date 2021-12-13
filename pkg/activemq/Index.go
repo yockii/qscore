@@ -181,7 +181,7 @@ func (mq *activeMq) read(queue string) {
 
 	receiver, err := mq.session.NewReceiver(
 		amqp.LinkSourceAddress(queue),
-		amqp.LinkCredit(10),
+		amqp.LinkCredit(1),
 	)
 	if err != nil {
 		//mq.safeSendError(err)
