@@ -16,7 +16,7 @@ func init() {
 	defaultConfig.SetConfigName("config")
 	defaultConfig.AddConfigPath("./conf")
 	if err := defaultConfig.ReadInConfig(); err != nil {
-		logger.Panicf("Fatal error config file: %s ", err)
+		logger.Warnf("No config file: %s ", err)
 	}
 	defaultConfig.AutomaticEnv()
 }
