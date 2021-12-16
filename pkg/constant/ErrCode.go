@@ -7,4 +7,5 @@ const (
 	ErrorCodeNotFound
 	ErrorCodeService
 	ErrorCodeDuplicate
+	ErrorCodeInvalid
 )
