@@ -67,6 +67,9 @@ func (a *webApp) Group(prefix string, needLogin, needRouterPermission bool) fibe
 	}
 	return a.app.Group(prefix, handlers...)
 }
+func (a *webApp) Use(args ...interface{}) fiber.Router {
+	return a.app.Use(args...)
+}
 func (a *webApp) All(path string, handlers ...fiber.Handler) fiber.Router {
 	return a.app.All(path, handlers...)
 }
@@ -110,6 +113,9 @@ func StandardVersionRouter(version, prefix string, add, update, delete, get, pag
 
 func Group(prefix string, needLogin, needRouterPermission bool) fiber.Router {
 	return defaultApp.Group(prefix, needLogin, needRouterPermission)
+}
+func Use(args ...interface{}) fiber.Router {
+	return defaultApp.Use(args...)
 }
 func All(path string, handlers ...fiber.Handler) fiber.Router {
 	return defaultApp.All(path, handlers...)
