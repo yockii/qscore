@@ -8,4 +8,5 @@ const (
 	ErrorCodeService
 	ErrorCodeDuplicate
 	ErrorCodeInvalid
+	ErrorCodeReject
 )
