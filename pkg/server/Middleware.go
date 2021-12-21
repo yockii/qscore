@@ -31,7 +31,9 @@ var Jwtware = jwtware.New(jwtware.Config{
 		uid := claims["uid"].(string)
 		sid := claims["sid"].(string)
 
-		cachedUid, err := cache.GetString(constant.AppSid + ":" + sid)
+		rConn := cache.Get()
+		defer rConn.Close()
+		cachedUid, err := redis.String(rConn.Do("GET", cache.Prefix+":"+constant.AppSid+":"+sid))
 
 		if err != nil {
 			if err != redis.ErrNil {

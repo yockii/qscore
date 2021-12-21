@@ -1,86 +1,42 @@
 package cache
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
 
-type cacher interface {
-	Type() string
-	Close()
-	SetWithExpire(string, interface{}, int) error
-	GetString(string) (string, error)
-}
+var Prefix string
+var Redis *redis.Pool
 
-type cacheable struct {
-	inMemory bool
-	mc       cacher
-	// redis
-	useRedis bool
-	rc       cacher
-}
-
-var cacheInstance = &cacheable{}
-
-func UseMemory() {
-	cacheInstance.inMemory = true
-	var c cacher = &memoryCacher{}
-	cacheInstance.mc = c
-}
-
-func UseRedis(redisPrefix, host, password string, port, maxIdle, maxActive int) {
-	var rc cacher = &redisCacher{
-		redisPrefix: redisPrefix,
-		redisPool: &redis.Pool{
-			Dial: func() (redis.Conn, error) {
-				c, err := redis.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
-				if err != nil {
+func InitRedis(redisPrefix, host, password string, port, maxIdle, maxActive int) {
+	Prefix = redisPrefix
+	Redis = &redis.Pool{
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+			if err != nil {
+				return nil, err
+			}
+			if password != "" {
+				if _, err := c.Do("AUTH", password); err != nil {
+					c.Close()
 					return nil, err
 				}
-				if password != "" {
-					if _, err := c.Do("AUTH", password); err != nil {
-						c.Close()
-						return nil, err
-					}
-				}
-				return c, err
-			},
-			MaxIdle:     maxIdle,
-			MaxActive:   maxActive,
-			IdleTimeout: 240 * time.Second,
-			Wait:        true,
+			}
+			return c, err
 		},
+		MaxIdle:     maxIdle,
+		MaxActive:   maxActive,
+		IdleTimeout: 240 * time.Second,
+		Wait:        true,
 	}
-	cacheInstance.rc = rc
+}
+
+func Get() redis.Conn {
+	return Redis.Get()
 }
 
 func Close() {
-	if cacheInstance.inMemory {
-		cacheInstance.mc.Close()
-	}
-	if cacheInstance.useRedis {
-		cacheInstance.rc.Close()
-	}
-}
-
-func SetWithExpire(key, value string, expireInSecond int) error {
-	if cacheInstance.useRedis {
-		return cacheInstance.rc.SetWithExpire(key, value, expireInSecond)
-	}
-	if cacheInstance.inMemory {
-		return cacheInstance.mc.SetWithExpire(key, value, expireInSecond)
-	}
-	return errors.New("SetWithExpire方法未找到适配器")
-}
-func GetString(key string) (value string, err error) {
-	if cacheInstance.useRedis {
-		return cacheInstance.rc.GetString(key)
-	}
-	if cacheInstance.inMemory {
-		return cacheInstance.mc.GetString(key)
-	}
-	return "", errors.New("GetString方法未找到适配器")
+	_ = Redis.Close()
 }
