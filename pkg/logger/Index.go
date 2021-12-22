@@ -24,7 +24,8 @@ func init() {
 	}
 	defaultLogger.Out = os.Stdout
 	defaultLogger.SetLevel("debug")
-	defaultLogger.SetReportCaller(true)
+	defaultLogger.AddHook(&GetCallerHook{Field: "caller"})
+	//defaultLogger.SetReportCaller(true)
 	defaultLogger.SetLogDir("logs", 30)
 }
 
