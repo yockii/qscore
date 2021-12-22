@@ -18,14 +18,16 @@ type activeMq struct {
 
 	readCredit uint32
 
-	inited    bool
-	started   bool
-	client    *amqp.Client
-	session   *amqp.Session
-	lock      sync.Mutex
-	handlers  map[string]func([]byte) error
-	errorChan chan error
-	senders   map[string]*amqp.Sender
+	inited         bool
+	started        bool
+	receiveClient  *amqp.Client
+	sendClient     *amqp.Client
+	receiveSession *amqp.Session
+	sendSession    *amqp.Session
+	lock           sync.Mutex
+	handlers       map[string]func([]byte) error
+	errorChan      chan error
+	senders        map[string]*amqp.Sender
 }
 
 func NewActiveMq() *activeMq {
@@ -45,7 +47,7 @@ func (mq *activeMq) Send(queue string, data []byte, delay int64) error {
 	if !ok {
 		var opts []amqp.LinkOption
 		opts = append(opts, amqp.LinkTargetAddress(queue))
-		mq.senders[queue], err = mq.session.NewSender(opts...)
+		mq.senders[queue], err = mq.sendSession.NewSender(opts...)
 		if err != nil {
 			return err
 		}
@@ -88,7 +90,7 @@ func (mq *activeMq) reinit() {
 	for q := range mq.senders {
 		var opts []amqp.LinkOption
 		opts = append(opts, amqp.LinkTargetAddress(q))
-		mq.senders[q], _ = mq.session.NewSender(opts...)
+		mq.senders[q], _ = mq.sendSession.NewSender(opts...)
 	}
 }
 
@@ -108,29 +110,55 @@ func (mq *activeMq) Init() error {
 	if mq.inited {
 		return nil
 	}
-	var client *amqp.Client
 	var err error
-	if mq.anonymous {
-		client, err = amqp.Dial(
-			mq.address,
-			amqp.ConnSASLAnonymous(),
-		)
-	} else if mq.username != "" && mq.password != "" {
-		client, err = amqp.Dial(
-			mq.address,
-			amqp.ConnSASLPlain(mq.username, mq.password),
-		)
-	} else {
-		mq.anonymous = true
-		client, err = amqp.Dial(
-			mq.address,
-			amqp.ConnSASLAnonymous(),
-		)
+	{
+		var client *amqp.Client
+		if mq.anonymous {
+			client, err = amqp.Dial(
+				mq.address,
+				amqp.ConnSASLAnonymous(),
+			)
+		} else if mq.username != "" && mq.password != "" {
+			client, err = amqp.Dial(
+				mq.address,
+				amqp.ConnSASLPlain(mq.username, mq.password),
+			)
+		} else {
+			mq.anonymous = true
+			client, err = amqp.Dial(
+				mq.address,
+				amqp.ConnSASLAnonymous(),
+			)
+		}
+		if err != nil {
+			return err
+		}
+		mq.sendClient = client
 	}
-	if err != nil {
-		return err
+	{
+		var client *amqp.Client
+		if mq.anonymous {
+			client, err = amqp.Dial(
+				mq.address,
+				amqp.ConnSASLAnonymous(),
+			)
+		} else if mq.username != "" && mq.password != "" {
+			client, err = amqp.Dial(
+				mq.address,
+				amqp.ConnSASLPlain(mq.username, mq.password),
+			)
+		} else {
+			mq.anonymous = true
+			client, err = amqp.Dial(
+				mq.address,
+				amqp.ConnSASLAnonymous(),
+			)
+		}
+		if err != nil {
+			return err
+		}
+		mq.receiveClient = client
 	}
-	mq.client = client
 	err = mq.createNewSession()
 	if err != nil {
 		return err
@@ -169,16 +197,30 @@ func (mq *activeMq) Close() error {
 	for _, sender := range mq.senders {
 		_ = sender.Close(ctx)
 	}
-	_ = mq.session.Close(ctx)
-	return mq.client.Close()
+	_ = mq.sendSession.Close(ctx)
+	_ = mq.sendClient.Close()
+
+	_ = mq.receiveSession.Close(ctx)
+	_ = mq.receiveClient.Close()
+
+	return nil
 }
 
 func (mq *activeMq) createNewSession() error {
-	session, err := mq.client.NewSession()
-	if err != nil {
-		return err
+	{
+		session, err := mq.sendClient.NewSession()
+		if err != nil {
+			return err
+		}
+		mq.sendSession = session
 	}
-	mq.session = session
+	{
+		session, err := mq.receiveClient.NewSession()
+		if err != nil {
+			return err
+		}
+		mq.receiveSession = session
+	}
 	return nil
 }
 
@@ -189,7 +231,7 @@ func (mq *activeMq) read(queue string) {
 		mq.readCredit = 1
 	}
 
-	receiver, err := mq.session.NewReceiver(
+	receiver, err := mq.receiveSession.NewReceiver(
 		amqp.LinkSourceAddress(queue),
 		amqp.LinkCredit(mq.readCredit),
 	)
@@ -246,6 +288,9 @@ func InitWithAddress(address string) error {
 }
 func Init() error {
 	return defaultActiveMq.Init()
+}
+func SetRecvCredit(credit uint32) {
+	defaultActiveMq.SetRecvCredit(credit)
 }
 func StartRead() {
 	defaultActiveMq.StartRead()
