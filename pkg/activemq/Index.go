@@ -16,6 +16,8 @@ type activeMq struct {
 	password  string
 	anonymous bool
 
+	readCredit uint32
+
 	inited    bool
 	started   bool
 	client    *amqp.Client
@@ -139,6 +141,10 @@ func (mq *activeMq) Init() error {
 	return nil
 }
 
+func (mq *activeMq) SetRecvCredit(credit uint32) {
+	mq.readCredit = credit
+}
+
 func (mq *activeMq) StartRead() {
 	// 处理注册的handlers
 	for queue := range mq.handlers {
@@ -179,9 +185,13 @@ func (mq *activeMq) createNewSession() error {
 func (mq *activeMq) read(queue string) {
 	ctx := context.Background()
 
+	if mq.readCredit <= 0 {
+		mq.readCredit = 1
+	}
+
 	receiver, err := mq.session.NewReceiver(
 		amqp.LinkSourceAddress(queue),
-		amqp.LinkCredit(1),
+		amqp.LinkCredit(mq.readCredit),
 	)
 	if err != nil {
 		//mq.safeSendError(err)
