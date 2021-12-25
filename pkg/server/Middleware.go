@@ -30,6 +30,7 @@ var Jwtware = jwtware.New(jwtware.Config{
 		claims := jwtToken.Claims.(jwt.MapClaims)
 		uid := claims["uid"].(string)
 		sid := claims["sid"].(string)
+		tenantId := claims["tenantId"].(string)
 
 		rConn := cache.Get()
 		defer rConn.Close()
@@ -46,6 +47,7 @@ var Jwtware = jwtware.New(jwtware.Config{
 			return c.Status(fiber.StatusUnauthorized).SendString("token信息失效")
 		}
 		c.Locals("userId", uid)
+		c.Locals("tenantId", tenantId)
 		return c.Next()
 	},
 })
