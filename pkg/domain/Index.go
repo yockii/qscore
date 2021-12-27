@@ -41,12 +41,12 @@ var DateTimeConverter = func(value string) reflect.Value {
 	if v, err := time.Parse("2006-01-02 15:04:05", value); err == nil {
 		return reflect.ValueOf(v)
 	}
-	return reflect.Value{}
+	return reflect.ValueOf(time.Time{})
 }
 
 type TimeCondition struct {
-	Start DateTime `json:"start"`
-	End   DateTime `json:"end"`
+	Start DateTime `json:"start,omitempty" query:"start"`
+	End   DateTime `json:"end,omitempty" query:"end"`
 }
 
 type CommonResponse struct {
