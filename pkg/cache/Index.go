@@ -9,6 +9,7 @@ import (
 
 var Prefix string
 var Redis *redis.Pool
+var enabled bool
 
 func InitRedis(redisPrefix, host, password string, port, maxIdle, maxActive int) {
 	Prefix = redisPrefix
@@ -31,6 +32,7 @@ func InitRedis(redisPrefix, host, password string, port, maxIdle, maxActive int)
 		IdleTimeout: 240 * time.Second,
 		Wait:        true,
 	}
+	enabled = true
 }
 
 func Get() redis.Conn {
@@ -39,4 +41,8 @@ func Get() redis.Conn {
 
 func Close() {
 	_ = Redis.Close()
+}
+
+func Enabled() bool {
+	return enabled
 }

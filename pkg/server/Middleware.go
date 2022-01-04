@@ -8,6 +8,7 @@ import (
 
 	"github.com/yockii/qscore/pkg/authorization"
 	"github.com/yockii/qscore/pkg/cache"
+
 	"github.com/yockii/qscore/pkg/constant"
 	"github.com/yockii/qscore/pkg/logger"
 )
@@ -32,20 +33,22 @@ var Jwtware = jwtware.New(jwtware.Config{
 		sid := claims["sid"].(string)
 		tenantId := claims["tenantId"].(string)
 
-		rConn := cache.Get()
-		defer rConn.Close()
-		cachedUid, err := redis.String(rConn.Do("GET", cache.Prefix+":"+constant.AppSid+":"+sid))
-
-		if err != nil {
-			if err != redis.ErrNil {
-				logger.Error(err)
+		if cache.Enabled() {
+			rConn := cache.Get()
+			defer rConn.Close()
+			cachedUid, err := redis.String(rConn.Do("GET", cache.Prefix+":"+constant.AppSid+":"+sid))
+			if err != nil {
+				if err != redis.ErrNil {
+					logger.Error(err)
+				}
+				return c.Status(fiber.StatusUnauthorized).SendString("token信息失效")
 			}
-			return c.Status(fiber.StatusUnauthorized).SendString("token信息失效")
+			if cachedUid != uid {
+				logger.Error(err)
+				return c.Status(fiber.StatusUnauthorized).SendString("token信息失效")
+			}
 		}
-		if cachedUid != uid {
-			logger.Error(err)
-			return c.Status(fiber.StatusUnauthorized).SendString("token信息失效")
-		}
+
 		c.Locals("userId", uid)
 		c.Locals("tenantId", tenantId)
 		return c.Next()
