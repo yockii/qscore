@@ -16,17 +16,17 @@ type logger struct {
 	*logrus.Logger
 }
 
-var defaultLogger *logger
+var DefaultLogger *logger
 
 func init() {
-	defaultLogger = &logger{
+	DefaultLogger = &logger{
 		logrus.New(),
 	}
-	defaultLogger.Out = os.Stdout
-	defaultLogger.SetLevel("debug")
-	defaultLogger.AddHook(&GetCallerHook{Field: "caller"})
-	//defaultLogger.SetReportCaller(true)
-	defaultLogger.SetLogDir("logs", 30)
+	DefaultLogger.Out = os.Stdout
+	DefaultLogger.SetLevel("debug")
+	DefaultLogger.AddHook(&GetCallerHook{Field: "caller"})
+	//DefaultLogger.SetReportCaller(true)
+	DefaultLogger.SetLogDir("logs", 30)
 }
 
 func (l *logger) SetLevel(level string) error {
@@ -83,13 +83,13 @@ func writer(logPath, level string, rotatedNum int) io.Writer {
 }
 
 func SetLevel(level string) error {
-	return defaultLogger.SetLevel(level)
+	return DefaultLogger.SetLevel(level)
 }
 func SetReportCaller(enable bool) {
-	defaultLogger.SetReportCaller(enable)
+	DefaultLogger.SetReportCaller(enable)
 }
 func SetLogDir(dir string, rotateNum int) {
-	defaultLogger.SetLogDir(dir, rotateNum)
+	DefaultLogger.SetLogDir(dir, rotateNum)
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -164,71 +164,71 @@ func (l *logger) Tracef(format string, args ...interface{}) {
 }
 
 func Fatal(args ...interface{}) {
-	defaultLogger.Fatal(args...)
+	DefaultLogger.Fatal(args...)
 }
 func Fatalln(args ...interface{}) {
-	defaultLogger.Fatalln(args...)
+	DefaultLogger.Fatalln(args...)
 }
 func Fatalf(format string, args ...interface{}) {
-	defaultLogger.Fatalf(format, args...)
+	DefaultLogger.Fatalf(format, args...)
 }
 
 func Panic(args ...interface{}) {
-	defaultLogger.Panic(args...)
+	DefaultLogger.Panic(args...)
 }
 func Panicln(args ...interface{}) {
-	defaultLogger.Panicln(args...)
+	DefaultLogger.Panicln(args...)
 }
 func Panicf(format string, args ...interface{}) {
-	defaultLogger.Panicf(format, args...)
+	DefaultLogger.Panicf(format, args...)
 }
 
 func Error(args ...interface{}) {
-	defaultLogger.Error(args...)
+	DefaultLogger.Error(args...)
 }
 func Errorln(args ...interface{}) {
-	defaultLogger.Errorln(args...)
+	DefaultLogger.Errorln(args...)
 }
 func Errorf(format string, args ...interface{}) {
-	defaultLogger.Errorf(format, args...)
+	DefaultLogger.Errorf(format, args...)
 }
 
 func Warn(args ...interface{}) {
-	defaultLogger.Warn(args...)
+	DefaultLogger.Warn(args...)
 }
 func Warnln(args ...interface{}) {
-	defaultLogger.Warnln(args...)
+	DefaultLogger.Warnln(args...)
 }
 func Warnf(format string, args ...interface{}) {
-	defaultLogger.Warnf(format, args...)
+	DefaultLogger.Warnf(format, args...)
 }
 
 func Info(args ...interface{}) {
-	defaultLogger.Info(args...)
+	DefaultLogger.Info(args...)
 }
 func Infoln(args ...interface{}) {
-	defaultLogger.Infoln(args...)
+	DefaultLogger.Infoln(args...)
 }
 func Infof(format string, args ...interface{}) {
-	defaultLogger.Infof(format, args...)
+	DefaultLogger.Infof(format, args...)
 }
 
 func Debug(args ...interface{}) {
-	defaultLogger.Debug(args...)
+	DefaultLogger.Debug(args...)
 }
 func Debugln(args ...interface{}) {
-	defaultLogger.Debugln(args...)
+	DefaultLogger.Debugln(args...)
 }
 func Debugf(format string, args ...interface{}) {
-	defaultLogger.Debugf(format, args...)
+	DefaultLogger.Debugf(format, args...)
 }
 
 func Trace(args ...interface{}) {
-	defaultLogger.Trace(args...)
+	DefaultLogger.Trace(args...)
 }
 func Traceln(args ...interface{}) {
-	defaultLogger.Traceln(args...)
+	DefaultLogger.Traceln(args...)
 }
 func Tracef(format string, args ...interface{}) {
-	defaultLogger.Tracef(format, args...)
+	DefaultLogger.Tracef(format, args...)
 }
