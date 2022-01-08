@@ -81,6 +81,9 @@ func GetBool(key string) bool {
 func GetUint(key string) uint {
 	return defaultConfig.GetUint(key)
 }
+func GetFloat64(key string) float64 {
+	return defaultConfig.GetFloat64(key)
+}
 func IsSet(key string) bool {
 	return defaultConfig.IsSet(key)
 }
