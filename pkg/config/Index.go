@@ -46,6 +46,9 @@ func (c *config) GetBool(key string) bool {
 func (c *config) GetUint(key string) uint {
 	return c.Viper.GetUint(key)
 }
+func (c *config) GetFloat64(key string) float64 {
+	return c.Viper.GetFloat64(key)
+}
 func (c *config) IsSet(key string) bool {
 	return c.Viper.IsSet(key)
 }
