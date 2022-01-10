@@ -83,7 +83,7 @@ func writer(logPath, logFileRegex, level string, rotatedNum int, rotationTime ti
 
 	logier, err := rotatelogs.New(
 		logFullPath+"-"+fileSuffix,
-		rotatelogs.WithLinkName(logFullPath),
+		rotatelogs.WithLinkName(logFullPath+".log"),
 		rotatelogs.WithRotationCount(rotatedNum),
 		//rotatelogs.WithMaxAge(rotationTime*time.Duration(rotatedNum)),
 		rotatelogs.WithRotationTime(rotationTime),
