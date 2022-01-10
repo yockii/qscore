@@ -44,13 +44,13 @@ func (l *logger) SetReportCaller(enable bool) {
 }
 
 func (l *logger) SetLogDir(dir string, rotatedNum int) {
-	l.SetLogDirWithLogFileRegexAndRotateTime(dir, "%Y-%m-%D.log", rotatedNum, 24*time.Hour)
+	l.SetLogDirWithLogFileRegexAndRotateTime(dir, "%Y-%m-%d.log", rotatedNum, 24*time.Hour)
 }
 func (l *logger) SetLogDirWithLogFileRegex(dir, logFileRegex string, rotatedNum int) {
 	l.SetLogDirWithLogFileRegexAndRotateTime(dir, logFileRegex, rotatedNum, 24*time.Hour)
 }
 func (l *logger) SetLogDirRotateTime(dir string, rotatedNum int, rotationTime time.Duration) {
-	l.SetLogDirWithLogFileRegexAndRotateTime(dir, "%Y-%m-%D.log", rotatedNum, rotationTime)
+	l.SetLogDirWithLogFileRegexAndRotateTime(dir, "%Y-%m-%d.log", rotatedNum, rotationTime)
 }
 
 func (l *logger) SetLogDirWithLogFileRegexAndRotateTime(dir, logFileRegex string, rotatedNum int, rotationTime time.Duration) {
