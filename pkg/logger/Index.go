@@ -20,13 +20,13 @@ var DefaultLogger *logger
 
 func init() {
 	DefaultLogger = &logger{
-		logrus.New(),
+		Logger: logrus.New(),
 	}
 	DefaultLogger.Out = os.Stdout
 	DefaultLogger.SetLevel("debug")
 	DefaultLogger.AddHook(&GetCallerHook{Field: "caller"})
 	//DefaultLogger.SetReportCaller(true)
-	DefaultLogger.SetLogDir("logs", 30)
+	//DefaultLogger.SetLogDir("logs", 30)
 }
 
 func (l *logger) SetLevel(level string) error {
@@ -44,6 +44,16 @@ func (l *logger) SetReportCaller(enable bool) {
 }
 
 func (l *logger) SetLogDir(dir string, rotatedNum int) {
+	l.SetLogDirWithLogFileRegexAndRotateTime(dir, "%Y-%m-%D.log", rotatedNum, 24*time.Hour)
+}
+func (l *logger) SetLogDirWithLogFileRegex(dir, logFileRegex string, rotatedNum int) {
+	l.SetLogDirWithLogFileRegexAndRotateTime(dir, logFileRegex, rotatedNum, 24*time.Hour)
+}
+func (l *logger) SetLogDirRotateTime(dir string, rotatedNum int, rotationTime time.Duration) {
+	l.SetLogDirWithLogFileRegexAndRotateTime(dir, "%Y-%m-%D.log", rotatedNum, rotationTime)
+}
+
+func (l *logger) SetLogDirWithLogFileRegexAndRotateTime(dir, logFileRegex string, rotatedNum int, rotationTime time.Duration) {
 	p, _ := filepath.Abs(dir)
 	if _, err := os.Stat(p); os.IsNotExist(err) {
 		if os.MkdirAll(p, os.ModePerm) != nil {
@@ -51,29 +61,32 @@ func (l *logger) SetLogDir(dir string, rotatedNum int) {
 			return
 		}
 	}
+
 	lfHook := lfshook.NewHook(lfshook.WriterMap{
-		logrus.DebugLevel: writer(p, "debug", rotatedNum),
-		logrus.InfoLevel:  writer(p, "info", rotatedNum),
-		logrus.WarnLevel:  writer(p, "warn", rotatedNum),
-		logrus.ErrorLevel: writer(p, "error", rotatedNum),
+		logrus.DebugLevel: writer(p, logFileRegex, "debug", rotatedNum, rotationTime),
+		logrus.InfoLevel:  writer(p, logFileRegex, "info", rotatedNum, rotationTime),
+		logrus.WarnLevel:  writer(p, logFileRegex, "warn", rotatedNum, rotationTime),
+		logrus.ErrorLevel: writer(p, logFileRegex, "error", rotatedNum, rotationTime),
 	}, &logrus.TextFormatter{
 		DisableColors:   true,
 		TimestampFormat: "2006-01-02 15:04:05",
 	})
 	//}, &myFormatter{})
+
 	l.AddHook(lfHook)
 	return
 }
 
-func writer(logPath, level string, rotatedNum int) io.Writer {
+func writer(logPath, logFileRegex, level string, rotatedNum int, rotationTime time.Duration) io.Writer {
 	logFullPath := path.Join(logPath, level)
-	fileSuffix := time.Now().Local().Format("2006-01-02") + ".log"
+	fileSuffix := logFileRegex
 
 	logier, err := rotatelogs.New(
 		logFullPath+"-"+fileSuffix,
-		//rotatelogs.WithLinkName(logFullPath),
+		rotatelogs.WithLinkName(logFullPath),
 		rotatelogs.WithRotationCount(rotatedNum),
-		rotatelogs.WithRotationTime(time.Hour*24),
+		//rotatelogs.WithMaxAge(rotationTime*time.Duration(rotatedNum)),
+		rotatelogs.WithRotationTime(rotationTime),
 	)
 
 	if err != nil {
