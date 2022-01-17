@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/spf13/viper"
-
+	
 	"github.com/yockii/qscore/pkg/logger"
 )
 
@@ -52,6 +52,9 @@ func (c *config) GetFloat64(key string) float64 {
 func (c *config) IsSet(key string) bool {
 	return c.Viper.IsSet(key)
 }
+func (c *config) GetStringSlice(key string) []string {
+	return c.Viper.GetStringSlice(key)
+}
 
 /////////////////////////////////////////////////////////////////////
 //////// 默认配置获取 //////
@@ -86,4 +89,7 @@ func GetFloat64(key string) float64 {
 }
 func IsSet(key string) bool {
 	return defaultConfig.IsSet(key)
+}
+func GetStringSlice(key string) []string {
+	return defaultConfig.GetStringSlice(key)
 }
