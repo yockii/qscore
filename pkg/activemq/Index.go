@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 	"time"
-
+	
 	"github.com/Azure/go-amqp"
-
+	
 	"github.com/yockii/qscore/pkg/logger"
 )
 
@@ -16,12 +16,12 @@ type activeMq struct {
 	username  string
 	password  string
 	anonymous bool
-
+	
 	addressList         []string
 	currentAddressIndex int
-
+	
 	readCredit uint32
-
+	
 	inited         bool
 	started        bool
 	receiveClient  *amqp.Client
@@ -59,7 +59,7 @@ func (mq *activeMq) Send(queue string, data []byte, delay int64) error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
+	
 	msg := amqp.NewMessage(data)
 	msg.Header = &amqp.MessageHeader{Durable: true}
 	if delay > 0 {
@@ -125,7 +125,7 @@ func (mq *activeMq) Init() error {
 		break
 	}
 	mq.currentAddressIndex = addressIndex
-
+	
 	err := mq.createNewSession()
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (mq *activeMq) doInit(address string) error {
 			)
 		} else {
 			mq.anonymous = true
-
+			
 			client, err = amqp.Dial(
 				address,
 				amqp.ConnSASLAnonymous(),
@@ -194,6 +194,14 @@ func (mq *activeMq) SetRecvCredit(credit uint32) {
 	mq.readCredit = credit
 }
 
+func (mq *activeMq) SetUsername(username string) {
+	mq.username = username
+}
+
+func (mq *activeMq) SetPassword(password string) {
+	mq.password = password
+}
+
 func (mq *activeMq) SetAddresses(addresses ...string) {
 	mq.addressList = addresses
 }
@@ -206,9 +214,9 @@ func (mq *activeMq) StartRead() {
 	mq.started = true
 	<-mq.errorChan
 	mq.inited = false
-
+	
 	mq.reinit()
-
+	
 	if !mq.started {
 		mq.StartRead()
 	}
@@ -216,7 +224,7 @@ func (mq *activeMq) StartRead() {
 
 func (mq *activeMq) Close() error {
 	mq.started = false
-
+	
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	for _, sender := range mq.senders {
@@ -224,10 +232,10 @@ func (mq *activeMq) Close() error {
 	}
 	_ = mq.sendSession.Close(ctx)
 	_ = mq.sendClient.Close()
-
+	
 	_ = mq.receiveSession.Close(ctx)
 	_ = mq.receiveClient.Close()
-
+	
 	return nil
 }
 
@@ -251,11 +259,11 @@ func (mq *activeMq) createNewSession() error {
 
 func (mq *activeMq) read(queue string) {
 	ctx := context.Background()
-
+	
 	if mq.readCredit <= 0 {
 		mq.readCredit = 1
 	}
-
+	
 	receiver, err := mq.receiveSession.NewReceiver(
 		amqp.LinkSourceAddress(queue),
 		amqp.LinkCredit(mq.readCredit),
@@ -271,7 +279,7 @@ func (mq *activeMq) read(queue string) {
 		}
 		cancel()
 	}()
-
+	
 	ec := mq.errorChan
 	for {
 		msg, err2 := receiver.Receive(ctx)
@@ -319,6 +327,12 @@ func SetRecvCredit(credit uint32) {
 }
 func SetAddresses(addresses ...string) {
 	defaultActiveMq.SetAddresses(addresses...)
+}
+func SetUsername(username string) {
+	defaultActiveMq.SetUsername(username)
+}
+func SetPassword(password string) {
+	defaultActiveMq.SetPassword(password)
 }
 func StartRead() {
 	defaultActiveMq.StartRead()
