@@ -54,7 +54,7 @@ func (mq *activeMq) Send(queue string, data []byte, delay int64) error {
 		mq.senders[queue], err = mq.sendSession.NewSender(opts...)
 		if err != nil {
 			// 出现错误，应该尝试重新链接
-			if err.Error() == "EOF" {
+			if err == amqp.ErrConnClosed || err.Error() == "EOF" {
 				mq.inited = false
 				mq.reinit()
 				err = mq.Send(queue, data, delay)
@@ -77,7 +77,7 @@ func (mq *activeMq) Send(queue string, data []byte, delay int64) error {
 	}
 	err = sender.Send(ctx, msg)
 	if err != nil {
-		if err == amqp.ErrConnClosed {
+		if err == amqp.ErrConnClosed || err.Error() == "EOF" {
 			mq.inited = false
 			mq.reinit()
 			err = mq.Send(queue, data, delay)
