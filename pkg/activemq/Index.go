@@ -53,7 +53,15 @@ func (mq *activeMq) Send(queue string, data []byte, delay int64) error {
 		opts = append(opts, amqp.LinkTargetAddress(queue))
 		mq.senders[queue], err = mq.sendSession.NewSender(opts...)
 		if err != nil {
-			return err
+			// 出现错误，应该尝试重新链接
+			if err.Error() == "EOF" {
+				mq.inited = false
+				mq.reinit()
+				err = mq.Send(queue, data, delay)
+			}
+			if err != nil {
+				return err
+			}
 		}
 		sender = mq.senders[queue]
 	}
