@@ -48,7 +48,7 @@ func (mq *activeMq) RegisterHandlers(queue string, handler func([]byte) error) {
 func (mq *activeMq) Send(queue string, data []byte, delay int64) error {
 	sender, ok := mq.senders[queue]
 	var err error
-	if !ok {
+	if !ok || sender == nil {
 		var opts []amqp.LinkOption
 		opts = append(opts, amqp.LinkTargetAddress(queue))
 		mq.senders[queue], err = mq.sendSession.NewSender(opts...)
