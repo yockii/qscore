@@ -2,26 +2,27 @@ package activemq
 
 import (
 	"context"
+	"crypto/tls"
 	"sync"
 	"time"
-	
+
 	"github.com/Azure/go-amqp"
-	
+
 	"github.com/yockii/qscore/pkg/logger"
 )
 
 var defaultActiveMq = NewActiveMq()
 
 type activeMq struct {
-	username  string
-	password  string
-	anonymous bool
-	
+	username            string
+	password            string
+	anonymous           bool
+	insecureSkipVerify  bool
 	addressList         []string
 	currentAddressIndex int
-	
+
 	readCredit uint32
-	
+
 	inited         bool
 	started        bool
 	receiveClient  *amqp.Client
@@ -67,7 +68,7 @@ func (mq *activeMq) Send(queue string, data []byte, delay int64) error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	msg := amqp.NewMessage(data)
 	msg.Header = &amqp.MessageHeader{Durable: true}
 	if delay > 0 {
@@ -133,7 +134,7 @@ func (mq *activeMq) Init() error {
 		break
 	}
 	mq.currentAddressIndex = addressIndex
-	
+
 	err := mq.createNewSession()
 	if err != nil {
 		return err
@@ -152,18 +153,21 @@ func (mq *activeMq) doInit(address string) error {
 			client, err = amqp.Dial(
 				address,
 				amqp.ConnSASLAnonymous(),
+				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
 			)
 		} else if mq.username != "" && mq.password != "" {
 			client, err = amqp.Dial(
 				address,
 				amqp.ConnSASLPlain(mq.username, mq.password),
+				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
 			)
 		} else {
 			mq.anonymous = true
-			
+
 			client, err = amqp.Dial(
 				address,
 				amqp.ConnSASLAnonymous(),
+				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
 			)
 		}
 		if err != nil {
@@ -177,17 +181,20 @@ func (mq *activeMq) doInit(address string) error {
 			client, err = amqp.Dial(
 				address,
 				amqp.ConnSASLAnonymous(),
+				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
 			)
 		} else if mq.username != "" && mq.password != "" {
 			client, err = amqp.Dial(
 				address,
 				amqp.ConnSASLPlain(mq.username, mq.password),
+				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
 			)
 		} else {
 			mq.anonymous = true
 			client, err = amqp.Dial(
 				address,
 				amqp.ConnSASLAnonymous(),
+				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
 			)
 		}
 		if err != nil {
@@ -213,6 +220,9 @@ func (mq *activeMq) SetPassword(password string) {
 func (mq *activeMq) SetAddresses(addresses ...string) {
 	mq.addressList = addresses
 }
+func (mq *activeMq) SetInsecureSkipVerify(insecureSkipVerify bool) {
+	mq.insecureSkipVerify = insecureSkipVerify
+}
 
 func (mq *activeMq) StartRead() {
 	// 处理注册的handlers
@@ -222,9 +232,9 @@ func (mq *activeMq) StartRead() {
 	mq.started = true
 	<-mq.errorChan
 	mq.inited = false
-	
+
 	mq.reinit()
-	
+
 	if !mq.started {
 		mq.StartRead()
 	}
@@ -232,7 +242,7 @@ func (mq *activeMq) StartRead() {
 
 func (mq *activeMq) Close() error {
 	mq.started = false
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	for _, sender := range mq.senders {
@@ -243,10 +253,10 @@ func (mq *activeMq) Close() error {
 	}
 	_ = mq.sendSession.Close(ctx)
 	_ = mq.sendClient.Close()
-	
+
 	_ = mq.receiveSession.Close(ctx)
 	_ = mq.receiveClient.Close()
-	
+
 	return nil
 }
 
@@ -270,11 +280,11 @@ func (mq *activeMq) createNewSession() error {
 
 func (mq *activeMq) read(queue string) {
 	ctx := context.Background()
-	
+
 	if mq.readCredit <= 0 {
 		mq.readCredit = 1
 	}
-	
+
 	receiver, err := mq.receiveSession.NewReceiver(
 		amqp.LinkSourceAddress(queue),
 		amqp.LinkCredit(mq.readCredit),
@@ -290,7 +300,7 @@ func (mq *activeMq) read(queue string) {
 		}
 		cancel()
 	}()
-	
+
 	ec := mq.errorChan
 	for {
 		msg, err2 := receiver.Receive(ctx)
@@ -344,6 +354,9 @@ func SetUsername(username string) {
 }
 func SetPassword(password string) {
 	defaultActiveMq.SetPassword(password)
+}
+func SetInsecureSkipVerify(insecureSkipVerify bool) {
+	defaultActiveMq.SetInsecureSkipVerify(insecureSkipVerify)
 }
 func StartRead() {
 	defaultActiveMq.StartRead()
