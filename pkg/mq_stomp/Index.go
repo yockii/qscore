@@ -57,7 +57,9 @@ func (mq *mqStomp) Init() error {
 			address := mq.addressList[addressIndex]
 			if isSTOMPTLS(address) {
 				var netConn *tls.Conn
-				netConn, err = tls.Dial("tcp", address, &tls.Config{})
+				netConn, err = tls.Dial("tcp", address, &tls.Config{
+					InsecureSkipVerify: mq.insecureSkipVerify,
+				})
 				if err != nil {
 					logger.Error(err)
 					continue
@@ -132,7 +134,9 @@ func (mq *mqStomp) StartRead() {
 	address := mq.addressList[mq.addressIndex]
 	if isSTOMPTLS(address) {
 		var netConn *tls.Conn
-		netConn, err = tls.Dial("tcp", address, &tls.Config{})
+		netConn, err = tls.Dial("tcp", address, &tls.Config{
+			InsecureSkipVerify: mq.insecureSkipVerify,
+		})
 		if err == nil {
 			mq.receiveConn, err = stomp.Connect(netConn, options...)
 		}
@@ -145,7 +149,9 @@ func (mq *mqStomp) StartRead() {
 			address = mq.addressList[addressIndex]
 			if isSTOMPTLS(address) {
 				var netConn *tls.Conn
-				netConn, err = tls.Dial("tcp", address, &tls.Config{})
+				netConn, err = tls.Dial("tcp", address, &tls.Config{
+					InsecureSkipVerify: mq.insecureSkipVerify,
+				})
 				if err != nil {
 					logger.Error(err)
 					continue
