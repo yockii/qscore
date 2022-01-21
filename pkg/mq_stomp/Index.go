@@ -130,7 +130,15 @@ func (mq *mqStomp) StartRead() {
 	}
 	var err error
 	address := mq.addressList[mq.addressIndex]
-	mq.receiveConn, err = stomp.Dial("tcp", address, options...)
+	if isSTOMPTLS(address) {
+		var netConn *tls.Conn
+		netConn, err = tls.Dial("tcp", address, &tls.Config{})
+		if err == nil {
+			mq.receiveConn, err = stomp.Connect(netConn, options...)
+		}
+	} else {
+		mq.receiveConn, err = stomp.Dial("tcp", address, options...)
+	}
 	if err != nil {
 		logger.Error(err)
 		for addressIndex := 0; addressIndex < len(mq.addressList); addressIndex++ {
