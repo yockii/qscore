@@ -1,6 +1,8 @@
 package mq_stomp
 
 import (
+	"crypto/tls"
+	"net"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,7 +47,7 @@ func (mq *mqStomp) Init() error {
 	var err error
 	{
 		options := []func(*stomp.Conn) error{
-			stomp.ConnOpt.Host("/"),
+			//stomp.ConnOpt.Host("/"),
 		}
 		if mq.username != "" && mq.password != "" {
 			options = append(options, stomp.ConnOpt.Login(mq.username, mq.password))
@@ -53,7 +55,17 @@ func (mq *mqStomp) Init() error {
 
 		for addressIndex := 0; addressIndex < len(mq.addressList); addressIndex++ {
 			address := mq.addressList[addressIndex]
-			mq.sendConn, err = stomp.Dial("tcp", address, options...)
+			if isSTOMPTLS(address) {
+				var netConn *tls.Conn
+				netConn, err = tls.Dial("tcp", address, &tls.Config{})
+				if err != nil {
+					logger.Error(err)
+					continue
+				}
+				mq.sendConn, err = stomp.Connect(netConn, options...)
+			} else {
+				mq.sendConn, err = stomp.Dial("tcp", address, options...)
+			}
 			if err != nil {
 				logger.Error(err)
 				continue
@@ -111,7 +123,7 @@ func (mq *mqStomp) Send(queue string, data []byte, delay int64) error {
 func (mq *mqStomp) StartRead() {
 	// 建立receiveConn
 	options := []func(*stomp.Conn) error{
-		stomp.ConnOpt.Host("/"),
+		//stomp.ConnOpt.Host("/"),
 	}
 	if mq.username != "" && mq.password != "" {
 		options = append(options, stomp.ConnOpt.Login(mq.username, mq.password))
@@ -123,7 +135,18 @@ func (mq *mqStomp) StartRead() {
 		logger.Error(err)
 		for addressIndex := 0; addressIndex < len(mq.addressList); addressIndex++ {
 			address = mq.addressList[addressIndex]
-			mq.receiveConn, err = stomp.Dial("tcp", address, options...)
+			if isSTOMPTLS(address) {
+				var netConn *tls.Conn
+				netConn, err = tls.Dial("tcp", address, &tls.Config{})
+				if err != nil {
+					logger.Error(err)
+					continue
+				}
+				mq.receiveConn, err = stomp.Connect(netConn, options...)
+			} else {
+				mq.receiveConn, err = stomp.Dial("tcp", address, options...)
+			}
+			//mq.receiveConn, err = stomp.Dial("tcp", address, options...)
 			if err != nil {
 				logger.Error(err)
 				continue
@@ -263,4 +286,22 @@ func StartRead() {
 }
 func Close() error {
 	return defaultStomp.Close()
+}
+
+/////////////////////
+
+func isSTOMPTLS(address string) bool {
+	_, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return false
+	}
+
+	switch port {
+	case "61613":
+		return false
+	case "61614":
+		return true
+	default:
+		return false
+	}
 }
