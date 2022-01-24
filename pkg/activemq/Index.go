@@ -14,17 +14,17 @@ import (
 var defaultActiveMq = NewActiveMq()
 
 type activeMq struct {
-	username            string
-	password            string
-	anonymous           bool
-	insecureSkipVerify  bool
-	addressList         []string
-	currentAddressIndex int
+	username           string
+	password           string
+	anonymous          bool
+	insecureSkipVerify bool
+	addressList        []string
 
 	readCredit uint32
 
-	inited         bool
-	started        bool
+	inited  bool
+	started bool
+
 	receiveClient  *amqp.Client
 	sendClient     *amqp.Client
 	receiveSession *amqp.Session
@@ -76,6 +76,7 @@ func (mq *activeMq) Send(queue string, data []byte, delay int64) error {
 			"x-opt-delivery-delay": delay,
 		}
 	}
+
 	err = sender.Send(ctx, msg)
 	if err != nil {
 		if err == amqp.ErrConnClosed || err.Error() == "EOF" {
@@ -123,8 +124,8 @@ func (mq *activeMq) Init() error {
 	if mq.inited {
 		return nil
 	}
-	addressIndex := 0
-	for ; addressIndex < len(mq.addressList); addressIndex++ {
+
+	for addressIndex := 0; addressIndex < len(mq.addressList); addressIndex++ {
 		address := mq.addressList[addressIndex]
 		err := mq.doInit(address)
 		if err != nil {
@@ -133,7 +134,6 @@ func (mq *activeMq) Init() error {
 		}
 		break
 	}
-	mq.currentAddressIndex = addressIndex
 
 	err := mq.createNewSession()
 	if err != nil {
@@ -150,25 +150,45 @@ func (mq *activeMq) doInit(address string) error {
 	{
 		var client *amqp.Client
 		if mq.anonymous {
-			client, err = amqp.Dial(
-				address,
-				amqp.ConnSASLAnonymous(),
-				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
-			)
+			if mq.insecureSkipVerify {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLAnonymous(),
+					amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
+				)
+			} else {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLAnonymous(),
+				)
+			}
 		} else if mq.username != "" && mq.password != "" {
-			client, err = amqp.Dial(
-				address,
-				amqp.ConnSASLPlain(mq.username, mq.password),
-				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
-			)
+			if mq.insecureSkipVerify {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLPlain(mq.username, mq.password),
+					amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
+				)
+			} else {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLPlain(mq.username, mq.password),
+				)
+			}
 		} else {
 			mq.anonymous = true
-
-			client, err = amqp.Dial(
-				address,
-				amqp.ConnSASLAnonymous(),
-				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
-			)
+			if mq.insecureSkipVerify {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLAnonymous(),
+					amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
+				)
+			} else {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLAnonymous(),
+				)
+			}
 		}
 		if err != nil {
 			return err
@@ -178,24 +198,45 @@ func (mq *activeMq) doInit(address string) error {
 	{
 		var client *amqp.Client
 		if mq.anonymous {
-			client, err = amqp.Dial(
-				address,
-				amqp.ConnSASLAnonymous(),
-				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
-			)
+			if mq.insecureSkipVerify {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLAnonymous(),
+					amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
+				)
+			} else {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLAnonymous(),
+				)
+			}
 		} else if mq.username != "" && mq.password != "" {
-			client, err = amqp.Dial(
-				address,
-				amqp.ConnSASLPlain(mq.username, mq.password),
-				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
-			)
+			if mq.insecureSkipVerify {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLPlain(mq.username, mq.password),
+					amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
+				)
+			} else {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLPlain(mq.username, mq.password),
+				)
+			}
 		} else {
 			mq.anonymous = true
-			client, err = amqp.Dial(
-				address,
-				amqp.ConnSASLAnonymous(),
-				amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
-			)
+			if mq.insecureSkipVerify {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLAnonymous(),
+					amqp.ConnTLSConfig(&tls.Config{InsecureSkipVerify: mq.insecureSkipVerify}),
+				)
+			} else {
+				client, err = amqp.Dial(
+					address,
+					amqp.ConnSASLAnonymous(),
+				)
+			}
 		}
 		if err != nil {
 			return err

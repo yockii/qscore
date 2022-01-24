@@ -1,7 +1,10 @@
 package mq_stomp
 
 import (
+	"crypto/tls"
+	"net"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/go-stomp/stomp/v3"
@@ -13,9 +16,11 @@ import (
 var defaultStomp = NewStomp()
 
 type mqStomp struct {
-	address  string
-	username string
-	password string
+	username           string
+	password           string
+	addressList        []string
+	insecureSkipVerify bool
+	addressIndex       int
 
 	inited  bool
 	started bool
@@ -25,7 +30,8 @@ type mqStomp struct {
 
 	errorChan chan error
 
-	handlers map[string]func([]byte) error
+	handlers    map[string]func([]byte) error
+	receiveConn *stomp.Conn
 }
 
 func NewStomp() *mqStomp {
@@ -41,12 +47,34 @@ func (mq *mqStomp) Init() error {
 	var err error
 	{
 		options := []func(*stomp.Conn) error{
-			stomp.ConnOpt.Host("/"),
+			//stomp.ConnOpt.Host("/"),
 		}
 		if mq.username != "" && mq.password != "" {
 			options = append(options, stomp.ConnOpt.Login(mq.username, mq.password))
 		}
-		mq.sendConn, err = stomp.Dial("tcp", mq.address, options...)
+
+		for addressIndex := 0; addressIndex < len(mq.addressList); addressIndex++ {
+			address := mq.addressList[addressIndex]
+			if isSTOMPTLS(address) {
+				var netConn *tls.Conn
+				netConn, err = tls.Dial("tcp", address, &tls.Config{
+					InsecureSkipVerify: mq.insecureSkipVerify,
+				})
+				if err != nil {
+					logger.Error(err)
+					continue
+				}
+				mq.sendConn, err = stomp.Connect(netConn, options...)
+			} else {
+				mq.sendConn, err = stomp.Dial("tcp", address, options...)
+			}
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			mq.addressIndex = addressIndex
+			break
+		}
 		if err != nil {
 			return err
 		}
@@ -56,14 +84,14 @@ func (mq *mqStomp) Init() error {
 	return nil
 }
 func (mq *mqStomp) InitWithUsernamePassword(address, username, password string) error {
-	mq.address = address
+	mq.SetAddresses(address)
 	mq.username = username
 	mq.password = password
 	return mq.Init()
 }
 
 func (mq *mqStomp) InitWithAddress(address string) error {
-	mq.address = address
+	mq.SetAddresses(address)
 	return mq.Init()
 }
 
@@ -84,7 +112,7 @@ func (mq *mqStomp) Send(queue string, data []byte, delay int64) error {
 		delayOpt,
 	)
 	if err != nil {
-		if err == stomp.ErrAlreadyClosed {
+		if strings.Contains(err.Error(), "closed") || err == stomp.ErrAlreadyClosed {
 			mq.inited = false
 			mq.reinit()
 			err = mq.Send(queue, data, delay)
@@ -95,6 +123,57 @@ func (mq *mqStomp) Send(queue string, data []byte, delay int64) error {
 }
 
 func (mq *mqStomp) StartRead() {
+	// 建立receiveConn
+	options := []func(*stomp.Conn) error{
+		//stomp.ConnOpt.Host("/"),
+	}
+	if mq.username != "" && mq.password != "" {
+		options = append(options, stomp.ConnOpt.Login(mq.username, mq.password))
+	}
+	var err error
+	address := mq.addressList[mq.addressIndex]
+	if isSTOMPTLS(address) {
+		var netConn *tls.Conn
+		netConn, err = tls.Dial("tcp", address, &tls.Config{
+			InsecureSkipVerify: mq.insecureSkipVerify,
+		})
+		if err == nil {
+			mq.receiveConn, err = stomp.Connect(netConn, options...)
+		}
+	} else {
+		mq.receiveConn, err = stomp.Dial("tcp", address, options...)
+	}
+	if err != nil {
+		logger.Error(err)
+		for addressIndex := 0; addressIndex < len(mq.addressList); addressIndex++ {
+			address = mq.addressList[addressIndex]
+			if isSTOMPTLS(address) {
+				var netConn *tls.Conn
+				netConn, err = tls.Dial("tcp", address, &tls.Config{
+					InsecureSkipVerify: mq.insecureSkipVerify,
+				})
+				if err != nil {
+					logger.Error(err)
+					continue
+				}
+				mq.receiveConn, err = stomp.Connect(netConn, options...)
+			} else {
+				mq.receiveConn, err = stomp.Dial("tcp", address, options...)
+			}
+			//mq.receiveConn, err = stomp.Dial("tcp", address, options...)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			mq.addressIndex = addressIndex
+			break
+		}
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+	}
+
 	for queue := range mq.handlers {
 		go mq.read(queue)
 	}
@@ -125,21 +204,22 @@ func (mq *mqStomp) reinit() {
 
 func (mq *mqStomp) Close() error {
 	mq.sendConn.Disconnect()
+	mq.receiveConn.Disconnect()
 	return nil
 }
 
 func (mq *mqStomp) read(queue string) {
-	options := []func(*stomp.Conn) error{
-		stomp.ConnOpt.Login(mq.username, mq.password),
-		stomp.ConnOpt.Host("/"),
-	}
-	conn, err := stomp.Dial("tcp", mq.address, options...)
-	if err != nil {
-		logger.Fatal("cannot connect to ", mq.address)
-	}
-	defer conn.Disconnect()
+	//options := []func(*stomp.Conn) error{
+	//	stomp.ConnOpt.Login(mq.username, mq.password),
+	//	stomp.ConnOpt.Host("/"),
+	//}
+	//conn, err := stomp.Dial("tcp", mq.addressList[mq.addressIndex], options...)
+	//if err != nil {
+	//	logger.Fatal("cannot connect to ", mq.addressList[mq.addressIndex])
+	//}
+	//defer conn.Disconnect()
 
-	sub, err := conn.Subscribe(queue, stomp.AckClient)
+	sub, err := mq.receiveConn.Subscribe(queue, stomp.AckClient)
 	if err != nil {
 		logger.Fatal("cannot subscribe to ", queue, err.Error())
 		return
@@ -154,9 +234,9 @@ func (mq *mqStomp) read(queue string) {
 
 		e := mq.handlers[queue](msg.Body)
 		if e != nil {
-			_ = conn.Nack(msg)
+			_ = mq.receiveConn.Nack(msg)
 		} else {
-			_ = conn.Ack(msg)
+			_ = mq.receiveConn.Ack(msg)
 		}
 	}
 }
@@ -168,6 +248,21 @@ func (mq *mqStomp) safeSendError(err error, ec chan error) {
 	}()
 	ec <- err
 	close(ec)
+}
+
+func (mq *mqStomp) SetUsername(username string) {
+	mq.username = username
+}
+
+func (mq *mqStomp) SetPassword(password string) {
+	mq.password = password
+}
+
+func (mq *mqStomp) SetAddresses(addresses ...string) {
+	mq.addressList = addresses
+}
+func (mq *mqStomp) SetInsecureSkipVerify(insecureSkipVerify bool) {
+	mq.insecureSkipVerify = insecureSkipVerify
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -188,9 +283,39 @@ func InitWithAddress(address string) error {
 func Init() error {
 	return defaultStomp.Init()
 }
+func SetAddresses(addresses ...string) {
+	defaultStomp.SetAddresses(addresses...)
+}
+func SetUsername(username string) {
+	defaultStomp.SetUsername(username)
+}
+func SetPassword(password string) {
+	defaultStomp.SetPassword(password)
+}
+func SetInsecureSkipVerify(insecureSkipVerify bool) {
+	defaultStomp.SetInsecureSkipVerify(insecureSkipVerify)
+}
 func StartRead() {
 	defaultStomp.StartRead()
 }
 func Close() error {
 	return defaultStomp.Close()
+}
+
+/////////////////////
+
+func isSTOMPTLS(address string) bool {
+	_, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return false
+	}
+
+	switch port {
+	case "61613":
+		return false
+	case "61614":
+		return true
+	default:
+		return false
+	}
 }
