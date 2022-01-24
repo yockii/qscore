@@ -31,7 +31,7 @@ var Jwtware = jwtware.New(jwtware.Config{
 		claims := jwtToken.Claims.(jwt.MapClaims)
 		uid := claims["uid"].(string)
 		sid := claims["sid"].(string)
-		tenantId := claims["tenantId"].(string)
+		tenantId, tenantOk := claims["tenantId"].(string)
 
 		if cache.Enabled() {
 			rConn := cache.Get()
@@ -50,7 +50,9 @@ var Jwtware = jwtware.New(jwtware.Config{
 		}
 
 		c.Locals("userId", uid)
-		c.Locals("tenantId", tenantId)
+		if tenantOk {
+			c.Locals("tenantId", tenantId)
+		}
 		return c.Next()
 	},
 })
