@@ -9,6 +9,10 @@ import (
 	"github.com/yockii/qscore/pkg/util"
 )
 
+func NoNeed(ctx *fiber.Ctx) error {
+	return ctx.SendStatus(fiber.StatusNotFound)
+}
+
 func ParsePaginationInfoFromQuery(ctx *fiber.Ctx) (limit, offset int, orderBy string, err error) {
 	sizeStr := ctx.Query("limit", "10")
 	offsetStr := ctx.Query("offset", "0")
