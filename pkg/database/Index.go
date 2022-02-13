@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
 	"xorm.io/xorm/names"
@@ -88,6 +89,8 @@ func initDB(dbType string, host string, user string, password string, dbName str
 			password,
 			dbName,
 		))
+	} else if dbType == "sqlite3" {
+		return xorm.NewEngine("sqlite3", host)
 	} else {
 		logger.Errorf("数据库初始化失败, 不支持的数据库类型! type=%s, host=%s, user=%s, pwd=%s, db=%s, port=%d", dbType, host, user, password, dbName, port)
 		return nil, errors.New("数据库初始化失败, 不支持的数据库类型")
