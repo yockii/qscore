@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/spf13/viper"
-	
+
 	"github.com/yockii/qscore/pkg/logger"
 )
 
@@ -46,6 +46,9 @@ func (c *config) GetBool(key string) bool {
 func (c *config) GetUint(key string) uint {
 	return c.Viper.GetUint(key)
 }
+func (c *config) GetUint64(key string) uint64 {
+	return c.Viper.GetUint64(key)
+}
 func (c *config) GetFloat64(key string) float64 {
 	return c.Viper.GetFloat64(key)
 }
@@ -83,6 +86,9 @@ func GetBool(key string) bool {
 }
 func GetUint(key string) uint {
 	return defaultConfig.GetUint(key)
+}
+func GetUint64(key string) uint64 {
+	return defaultConfig.GetUint64(key)
 }
 func GetFloat64(key string) float64 {
 	return defaultConfig.GetFloat64(key)
