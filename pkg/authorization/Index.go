@@ -40,7 +40,7 @@ func (s *authorizationService) Initial(db *xorm.Engine) error {
 	m.AddDef("p", "p", "sub, obj, act, eft, priority, tenant, resId")
 	m.AddDef("g", "g", "_, _, _")
 	m.AddDef("e", "e", "priority(p.eft) || deny")
-	m.AddDef("m", "m", "g(r.sub, p.sub) && keyMatch2(r.obj, p.obj) && r.act == p.act && r.tenant == p.tenant || checkSuperAdmin(r.sub)")
+	m.AddDef("m", "m", "g(r.sub, p.sub, r.tenant) && keyMatch2(r.obj, p.obj) && r.act == p.act && r.tenant == p.tenant || checkSuperAdmin(r.sub)")
 
 	s.enforcer, err = casbin.NewEnforcer(m, a)
 	if err != nil {
