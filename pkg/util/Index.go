@@ -16,9 +16,27 @@ func GenerateDatabaseID() string {
 	return uid.String()
 }
 
+func GetTimeFromDatabaseId(id string) (t time.Time, err error) {
+	kid, err := ksuid.Parse(id)
+	if err != nil {
+		return
+	}
+	t = kid.Time()
+	return
+}
+
 func GenerateRequestID() string {
 	uid := xid.New()
 	return uid.String()
+}
+
+func GetTimeFromRequestId(id string) (t time.Time, err error) {
+	x, err := xid.FromString(id)
+	if err != nil {
+		return
+	}
+	t = x.Time()
+	return
 }
 
 func Unicode2Zh(form string) (to string, err error) {
