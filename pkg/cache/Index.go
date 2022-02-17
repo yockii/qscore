@@ -11,11 +11,11 @@ var Prefix string
 var Redis *redis.Pool
 var enabled bool
 
-func InitRedis(redisPrefix, host, password string, port, maxIdle, maxActive int) {
+func InitRedis(redisPrefix, host, password string, port, maxIdle, maxActive int, options ...redis.DialOption) {
 	Prefix = redisPrefix
 	Redis = &redis.Pool{
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+			c, err := redis.Dial("tcp", fmt.Sprintf("%s:%d", host, port), options...)
 			if err != nil {
 				return nil, err
 			}
