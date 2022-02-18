@@ -76,7 +76,7 @@ func (hook GetCallerHook) SetKipPkg(args ...string) {
 }
 func (hook GetCallerHook) GetKipPkg() string {
 	if hook.KipPkg == "" {
-		return "logrus,logger"
+		return "logrus,logger,qscore"
 	}
 	return hook.KipPkg
 }
