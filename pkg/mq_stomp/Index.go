@@ -48,6 +48,7 @@ func (mq *mqStomp) Init() error {
 	{
 		options := []func(*stomp.Conn) error{
 			//stomp.ConnOpt.Host("/"),
+			stomp.ConnOpt.HeartBeat(0, 0),
 		}
 		if mq.username != "" && mq.password != "" {
 			options = append(options, stomp.ConnOpt.Login(mq.username, mq.password))
@@ -126,6 +127,7 @@ func (mq *mqStomp) StartRead() {
 	// 建立receiveConn
 	options := []func(*stomp.Conn) error{
 		//stomp.ConnOpt.Host("/"),
+		stomp.ConnOpt.HeartBeat(0, 0),
 	}
 	if mq.username != "" && mq.password != "" {
 		options = append(options, stomp.ConnOpt.Login(mq.username, mq.password))
