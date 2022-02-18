@@ -13,6 +13,9 @@ var enabled bool
 
 func InitRedis(redisPrefix, host, password string, port, maxIdle, maxActive int, options ...redis.DialOption) {
 	Prefix = redisPrefix
+	if password != "" {
+		options = append(options, redis.DialPassword(password))
+	}
 	Redis = &redis.Pool{
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial(
@@ -22,12 +25,12 @@ func InitRedis(redisPrefix, host, password string, port, maxIdle, maxActive int,
 			if err != nil {
 				return nil, err
 			}
-			if password != "" {
-				if _, err := c.Do("AUTH", password); err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
+			//if password != "" {
+			//	if _, err := c.Do("AUTH", password); err != nil {
+			//		c.Close()
+			//		return nil, err
+			//	}
+			//}
 			return c, err
 		},
 		MaxIdle:     maxIdle,
