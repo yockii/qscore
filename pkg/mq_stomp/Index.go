@@ -205,8 +205,12 @@ func (mq *mqStomp) reinit() {
 }
 
 func (mq *mqStomp) Close() error {
-	mq.sendConn.Disconnect()
-	mq.receiveConn.Disconnect()
+	if mq.sendConn != nil {
+		mq.sendConn.Disconnect()
+	}
+	if mq.receiveConn != nil {
+		mq.receiveConn.Disconnect()
+	}
 	return nil
 }
 
