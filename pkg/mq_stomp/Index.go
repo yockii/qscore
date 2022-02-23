@@ -113,7 +113,7 @@ func (mq *mqStomp) Send(queue string, data []byte, delay int64) error {
 		delayOpt,
 	)
 	if err != nil {
-		if strings.Contains(err.Error(), "closed") || err == stomp.ErrAlreadyClosed {
+		if strings.Contains(err.Error(), "closed") || err == stomp.ErrAlreadyClosed || strings.Contains(err.Error(), "timeout") {
 			mq.inited = false
 			mq.reinit()
 			err = mq.Send(queue, data, delay)
