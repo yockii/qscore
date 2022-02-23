@@ -82,6 +82,9 @@ func (mq *mqStomp) Init() error {
 	}
 
 	mq.inited = true
+	if mq.errorChan == nil {
+		mq.errorChan = make(chan error, 1)
+	}
 	return nil
 }
 func (mq *mqStomp) InitWithUsernamePassword(address, username, password string) error {
@@ -182,6 +185,7 @@ func (mq *mqStomp) StartRead() {
 	mq.started = true
 	<-mq.errorChan
 	mq.inited = false
+	mq.started = false
 
 	mq.reinit()
 
@@ -230,30 +234,33 @@ func (mq *mqStomp) read(queue string) {
 		logger.Fatal("cannot subscribe to ", queue, err.Error())
 		return
 	}
-	ec := mq.errorChan
 	for {
 		msg := <-sub.C
 		if msg.Err != nil {
-			mq.safeSendError(msg.Err, ec)
+			mq.safeSendError(msg.Err)
 			return
 		}
 
-		e := mq.handlers[queue](msg.Body)
-		if e != nil {
-			_ = mq.receiveConn.Nack(msg)
+		err = mq.handlers[queue](msg.Body)
+		if err != nil {
+			logger.Error(err)
+			err = mq.receiveConn.Nack(msg)
 		} else {
-			_ = mq.receiveConn.Ack(msg)
+			err = mq.receiveConn.Ack(msg)
+		}
+		if err != nil {
+			mq.safeSendError(err)
 		}
 	}
 }
 
-func (mq *mqStomp) safeSendError(err error, ec chan error) {
+func (mq *mqStomp) safeSendError(err error) {
 	defer func() {
 		if recover() != nil {
 		}
 	}()
-	ec <- err
-	close(ec)
+	mq.errorChan <- err
+	//close(ec)
 }
 
 func (mq *mqStomp) SetUsername(username string) {
