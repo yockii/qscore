@@ -99,3 +99,6 @@ func IsSet(key string) bool {
 func GetStringSlice(key string) []string {
 	return defaultConfig.GetStringSlice(key)
 }
+func GetIntSlice(key string) []int {
+	return defaultConfig.GetIntSlice(key)
+}
