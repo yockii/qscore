@@ -103,11 +103,21 @@ func StandardRouter(prefix string, add, update, delete, get, paginate fiber.Hand
 
 func StandardVersionRouter(version, prefix string, add, update, delete, get, paginate fiber.Handler) fiber.Router {
 	g := defaultApp.Group(fmt.Sprintf("/api/%s%s", version, prefix), true, true)
-	g.Post("/", add)
-	g.Put("/", update)
-	g.Delete("/", delete)
-	g.Get("/instance", get)
-	g.Get("/list", paginate)
+	if add != nil {
+		g.Post("/", add)
+	}
+	if update != nil {
+		g.Put("/", update)
+	}
+	if delete != nil {
+		g.Delete("/", delete)
+	}
+	if get != nil {
+		g.Get("/instance", get)
+	}
+	if paginate != nil {
+		g.Get("/list", paginate)
+	}
 	return g
 }
 
