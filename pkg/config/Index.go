@@ -59,6 +59,10 @@ func (c *config) GetStringSlice(key string) []string {
 	return c.Viper.GetStringSlice(key)
 }
 
+func (c *config) GetStringMapString(key string) map[string]string {
+	return c.Viper.GetStringMapString(key)
+}
+
 /////////////////////////////////////////////////////////////////////
 //////// 默认配置获取 //////
 
@@ -101,4 +105,7 @@ func GetStringSlice(key string) []string {
 }
 func GetIntSlice(key string) []int {
 	return defaultConfig.GetIntSlice(key)
+}
+func GetStringMapString(key string) map[string]string {
+	return defaultConfig.GetStringMapString(key)
 }
