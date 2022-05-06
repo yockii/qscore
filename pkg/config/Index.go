@@ -58,9 +58,11 @@ func (c *config) IsSet(key string) bool {
 func (c *config) GetStringSlice(key string) []string {
 	return c.Viper.GetStringSlice(key)
 }
-
 func (c *config) GetStringMapString(key string) map[string]string {
 	return c.Viper.GetStringMapString(key)
+}
+func (c *config) WatchConfig() {
+	c.Viper.WatchConfig()
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -108,4 +110,7 @@ func GetIntSlice(key string) []int {
 }
 func GetStringMapString(key string) map[string]string {
 	return defaultConfig.GetStringMapString(key)
+}
+func WatchConfig() {
+	defaultConfig.WatchConfig()
 }
