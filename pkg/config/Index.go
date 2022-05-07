@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/spf13/viper"
 
 	"github.com/yockii/qscore/pkg/logger"
@@ -61,6 +63,9 @@ func (c *config) GetStringSlice(key string) []string {
 func (c *config) GetStringMapString(key string) map[string]string {
 	return c.Viper.GetStringMapString(key)
 }
+func (c *config) GetDuration(key string) time.Duration {
+	return c.Viper.GetDuration(key)
+}
 func (c *config) WatchConfig() {
 	c.Viper.WatchConfig()
 }
@@ -110,6 +115,9 @@ func GetIntSlice(key string) []int {
 }
 func GetStringMapString(key string) map[string]string {
 	return defaultConfig.GetStringMapString(key)
+}
+func GetDuration(key string) time.Duration {
+	return defaultConfig.GetDuration(key)
 }
 func WatchConfig() {
 	defaultConfig.WatchConfig()
