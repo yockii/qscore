@@ -44,7 +44,7 @@ func ParsePaginationInfoFromQuery(ctx *fiber.Ctx) (limit, offset int, orderBy st
 				}
 			}
 		}
-		orderBy = ob
+		orderBy = ob[1:]
 	}
 	return
 }
