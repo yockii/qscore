@@ -53,8 +53,8 @@ func InitWebApp(views fiber.Views) *webApp {
 	return &webApp{app}
 }
 
-func (a *webApp) Listener(ln net.Listener) {
-	a.app.Listener(ln)
+func (a *webApp) Listener(ln net.Listener) error {
+	return a.app.Listener(ln)
 }
 func (a *webApp) Static(dir string) {
 	a.app.Static("/", dir, fiber.Static{
@@ -96,8 +96,8 @@ func (a *webApp) Shutdown() error {
 	return a.app.Shutdown()
 }
 
-func Listener(ln net.Listener) {
-	defaultApp.Listener(ln)
+func Listener(ln net.Listener) error {
+	return defaultApp.Listener(ln)
 }
 func Static(dir string) {
 	defaultApp.Static(dir)
