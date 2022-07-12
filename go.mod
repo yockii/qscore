@@ -20,6 +20,7 @@ require (
 	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f
 	github.com/lestrrat/go-strftime v0.0.0-20180220042222-ba3bf9c1d042 // indirect
 	github.com/lib/pq v1.10.4
+	github.com/rabbitmq/amqp091-go v1.3.4 // indirect
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/xid v1.2.1
@@ -27,6 +28,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.9.0
 	github.com/tebeka/strftime v0.1.5 // indirect
+	github.com/tjfoc/gmsm v1.4.1
 	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d // indirect
 	xorm.io/xorm v1.2.5
 )
