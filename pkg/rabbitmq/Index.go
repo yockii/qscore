@@ -95,6 +95,12 @@ func (mq *rabbitMq) init() error {
 	if err != nil {
 		return err
 	}
+
+	err = mq.channel.Qos(10, 0, false)
+	if err != nil {
+		return err
+	}
+
 	for name, _ := range mq.queues {
 		mq.queues[name], _ = mq.channel.QueueDeclare(name, false, false, false, false, nil)
 	}
@@ -123,7 +129,9 @@ func (mq *rabbitMq) Close() error {
 			return err
 		}
 	}
-	close(mq.errorChan)
+	if mq.errorChan != nil {
+		close(mq.errorChan)
+	}
 	return nil
 }
 
