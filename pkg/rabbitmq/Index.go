@@ -36,7 +36,7 @@ func (mq *rabbitMq) SetAddress(addressWithUsernamePassword string) {
 	mq.urlWithUsernameAndPassword = addressWithUsernamePassword
 }
 
-func (mq *rabbitMq) RegisterHandlers(queue string, handler func([]byte) error) {
+func (mq *rabbitMq) RegisterHandler(queue string, handler func([]byte) error) {
 	mq.queues[queue] = amqp091.Queue{Name: queue}
 	mq.handlers[queue] = handler
 }
@@ -164,8 +164,8 @@ func (mq *rabbitMq) read(msgChan <-chan amqp091.Delivery, handler func([]byte) e
 func SetAddress(addressWithUsernamePassword string) {
 	defaultRabbitMq.SetAddress(addressWithUsernamePassword)
 }
-func RegisterHandlers(queue string, handler func([]byte) error) {
-	defaultRabbitMq.RegisterHandlers(queue, handler)
+func RegisterHandler(queue string, handler func([]byte) error) {
+	defaultRabbitMq.RegisterHandler(queue, handler)
 }
 func Init() error  { return defaultRabbitMq.Init() }
 func Close() error { return defaultRabbitMq.Close() }
