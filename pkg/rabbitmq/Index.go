@@ -160,3 +160,16 @@ func (mq *rabbitMq) read(msgChan <-chan amqp091.Delivery, handler func([]byte) e
 	}
 	mq.errorChan <- errors.New("closed")
 }
+
+func SetAddress(addressWithUsernamePassword string) {
+	defaultRabbitMq.SetAddress(addressWithUsernamePassword)
+}
+func RegisterHandlers(queue string, handler func([]byte) error) {
+	defaultRabbitMq.RegisterHandlers(queue, handler)
+}
+func Init() error  { return defaultRabbitMq.Init() }
+func Close() error { return defaultRabbitMq.Close() }
+func StartRead()   { defaultRabbitMq.StartRead() }
+func Send(queue string, data []byte /*, delay int64*/) error {
+	return defaultRabbitMq.Send(queue, data)
+}
