@@ -37,6 +37,7 @@ func (mq *rabbitMq) SetAddress(addressWithUsernamePassword string) {
 }
 
 func (mq *rabbitMq) RegisterHandlers(queue string, handler func([]byte) error) {
+	mq.queues[queue] = amqp091.Queue{Name: queue}
 	mq.handlers[queue] = handler
 }
 
