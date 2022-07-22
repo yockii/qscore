@@ -20,6 +20,7 @@ const (
 type GetCallerHook struct {
 	Field  string
 	KipPkg string
+	Debug  bool
 	levels []logrus.Level
 }
 
@@ -45,6 +46,9 @@ func (hook *GetCallerHook) getCaller() *runtime.Frame {
 	depth := runtime.Callers(minimumCallerDepth, pcs)
 	frames := runtime.CallersFrames(pcs[:depth])
 	for f, again := frames.Next(); again; f, again = frames.Next() {
+		if !hook.Debug && strings.Contains(f.Function, "yockii/qscore") {
+			continue
+		}
 		pkg := getPackageName(f.Function)
 		// If the caller isn't part of this package, we're done
 		if !strings.Contains(hook.GetKipPkg(), pkg) {
@@ -70,6 +74,9 @@ func getPackageName(f string) string {
 	}
 
 	return f
+}
+func (hook GetCallerHook) SetDebug(debug bool) {
+	hook.Debug = debug
 }
 func (hook GetCallerHook) SetKipPkg(args ...string) {
 	hook.KipPkg = strings.Join(args, ",")
