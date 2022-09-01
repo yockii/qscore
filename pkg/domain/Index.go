@@ -18,6 +18,9 @@ func (t DateTime) IsZero() bool {
 }
 
 func (t DateTime) MarshalJSON() ([]byte, error) {
+	if t.IsZero() {
+		return []byte("null"), nil
+	}
 	s := fmt.Sprintf("\"%s\"", time.Time(t).Format(DateTimeFormat))
 	return []byte(s), nil
 }
