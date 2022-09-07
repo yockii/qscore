@@ -7,6 +7,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/casbin/casbin/v2 v2.39.1
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
+	github.com/forgoer/openssl v1.2.1 // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/go-stomp/stomp/v3 v3.0.3
 	github.com/gofiber/fiber/v2 v2.23.0
