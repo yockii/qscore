@@ -8,9 +8,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/template/html"
+	logger "github.com/sirupsen/logrus"
 
 	"github.com/yockii/qscore/pkg/domain"
-	"github.com/yockii/qscore/pkg/logger"
 )
 
 type webApp struct {
@@ -103,7 +103,7 @@ func Static(dir string) {
 	defaultApp.Static(dir)
 }
 
-//StandardRouter 标准路由，需要登录、校验权限
+// StandardRouter 标准路由，需要登录、校验权限
 func StandardRouter(prefix string, add, update, delete, get, paginate fiber.Handler) fiber.Router {
 	return StandardVersionRouter("v1", prefix, add, update, delete, get, paginate)
 }

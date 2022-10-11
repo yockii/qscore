@@ -26,7 +26,7 @@ func (j CookieJar) Cookies(u *url.URL) []*http.Cookie {
 func (j CookieJar) Encode() []byte {
 	buf := new(bytes.Buffer)
 	enc := gob.NewEncoder(buf)
-	enc.Encode(j)
+	_ = enc.Encode(j)
 	return buf.Bytes()
 }
 
@@ -37,6 +37,6 @@ func (j CookieJar) IsZero() bool {
 func Decode(bs []byte) CookieJar {
 	dec := gob.NewDecoder(bytes.NewBuffer(bs))
 	j := CookieJar{}
-	dec.Decode(&j)
+	_ = dec.Decode(&j)
 	return j
 }

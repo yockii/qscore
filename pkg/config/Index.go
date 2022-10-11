@@ -3,9 +3,8 @@ package config
 import (
 	"time"
 
+	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-
-	"github.com/yockii/qscore/pkg/logger"
 )
 
 type config struct {

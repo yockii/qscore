@@ -1,135 +1,173 @@
 package database
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
+	_ "gitee.com/chunanyong/dm"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/godror/godror"
+
 	_ "github.com/lib/pq"
-	"xorm.io/xorm"
-	"xorm.io/xorm/log"
-	"xorm.io/xorm/names"
+	logger "github.com/sirupsen/logrus"
+
+	"gitee.com/chunanyong/zorm"
 
 	"github.com/yockii/qscore/pkg/config"
-	"github.com/yockii/qscore/pkg/logger"
 )
 
-const (
-	mysqlConnStringFmt = "%s:%s@tcp(%s:%d)/%s"
-	pgConnStringFmt    = "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
-)
+var MainDB *zorm.DBDao
 
-var DB *xorm.Engine
-
-func InitDB(dbType, host, user, password, dbName string, port int, prefix string, showSql bool, logLevel string) {
-	var err error
-	DB, err = initDB(dbType, host, user, password, dbName, port)
-	if err != nil {
-		logger.Fatalf("数据库连接失败! %v", err)
-	}
-	if err = DB.Ping(); err != nil {
-		logger.Fatalf("数据库连接失败! %v", err)
-	}
-	if prefix != "" {
-		DB.SetTableMapper(names.NewPrefixMapper(names.SnakeMapper{}, prefix))
-	}
-
-	if showSql {
-		DB.ShowSQL(true)
-	}
-	if logLevel != "" {
-		switch strings.ToLower(logLevel) {
-		case "error":
-			DB.SetLogLevel(log.LOG_ERR)
-		case "warn":
-			DB.SetLogLevel(log.LOG_WARNING)
-		case "info":
-			DB.SetLogLevel(log.LOG_INFO)
-		case "debug":
-			DB.SetLogLevel(log.LOG_DEBUG)
-		default:
-			DB.SetLogLevel(log.LOG_OFF)
-		}
-	}
-
-}
-
-func InitDB2(dbDriver, datasource, prefix string, showSql bool, logLevel string) {
-	var err error
-	DB, err = initDBWithDefine(dbDriver, datasource)
-	if err != nil {
-		logger.Fatalf("数据库连接失败! %v", err)
-	}
-	if err = DB.Ping(); err != nil {
-		logger.Fatalf("数据库连接失败! %v", err)
-	}
-	if prefix != "" {
-		DB.SetTableMapper(names.NewPrefixMapper(names.SnakeMapper{}, prefix))
-	}
-
-	if showSql {
-		DB.ShowSQL(true)
-	}
-	if logLevel != "" {
-		switch strings.ToLower(logLevel) {
-		case "error":
-			DB.SetLogLevel(log.LOG_ERR)
-		case "warn":
-			DB.SetLogLevel(log.LOG_WARNING)
-		case "info":
-			DB.SetLogLevel(log.LOG_INFO)
-		case "debug":
-			DB.SetLogLevel(log.LOG_DEBUG)
-		default:
-			DB.SetLogLevel(log.LOG_OFF)
-		}
+func init() {
+	dbType := config.GetString("database.type")
+	switch strings.ToLower(dbType) {
+	case "oracle":
+		initOracle()
+	case "dm":
+		initDm()
+	case "pg", "postgres", "pgsql":
+		initPostgres()
+	case "kingbase":
+		initKingbase()
+	case "mysql":
+		initMysql()
+	default:
+		logger.Fatal("暂未开通配置的数据库类型")
 	}
 }
-
-func InitSysDB() {
-	InitDB(
-		config.GetString("database.driver"),
-		config.GetString("database.host"),
-		config.GetString("database.user"),
-		config.GetString("database.password"),
-		config.GetString("database.db"),
+func initKingbase() {
+	var err error
+	sslMode := "disabled"
+	if config.IsSet("database.sslMode") {
+		sslMode = config.GetString("database.sslMode")
+	}
+	dsn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		config.GetString("database.address"),
 		config.GetInt("database.port"),
-		config.GetString("database.prefix"),
-		config.GetBool("database.showSql"),
-		config.GetString("log.level"),
+		config.GetString("database.username"),
+		config.GetString("database.password"),
+		config.GetString("database.dbName"),
+		sslMode,
 	)
-}
+	dbConfig := &zorm.DataSourceConfig{
+		DSN:           dsn,
+		DriverName:    "postgres", // kingbase
+		Dialect:       "postgres", // kingbase
+		SlowSQLMillis: config.GetInt("database.slowSqlMillis"),
+		MaxOpenConns:  config.GetInt("database.maxConn"),
+		MaxIdleConns:  config.GetInt("database.maxIdle"),
+	}
 
-func initDBWithDefine(driverName, datasourceName string) (*xorm.Engine, error) {
-	return xorm.NewEngine(driverName, datasourceName)
-}
-
-func initDB(dbType string, host string, user string, password string, dbName string, port int) (*xorm.Engine, error) {
-	if dbType == "mysql" {
-		return initDBWithDefine("mysql", fmt.Sprintf(
-			mysqlConnStringFmt,
-			user,
-			password,
-			host,
-			port,
-			dbName,
-		))
-	} else if dbType == "pg" || dbType == "postgres" {
-		return initDBWithDefine("postgres", fmt.Sprintf(
-			pgConnStringFmt,
-			host,
-			port,
-			user,
-			password,
-			dbName,
-		))
-	} else {
-		logger.Errorf("数据库初始化失败, 不支持的数据库类型! type=%s, host=%s, user=%s, pwd=%s, db=%s, port=%d", dbType, host, user, password, dbName, port)
-		return nil, errors.New("数据库初始化失败, 不支持的数据库类型")
+	MainDB, err = zorm.NewDBDao(dbConfig)
+	if err != nil {
+		logger.Fatal("数据库创建失败! %v", err)
 	}
 }
 
-func Close() {
-	_ = DB.Close()
+func initOracle() {
+	var err error
+	dsn := fmt.Sprintf(`user="%s" password="%s" connectString="%s:%d/%s"`,
+		config.GetString("database.username"),
+		config.GetString("database.password"),
+		config.GetString("database.address"),
+		config.GetInt("database.port"),
+		config.GetString("database.dbName"),
+	)
+	dbConfig := &zorm.DataSourceConfig{
+		DSN:           dsn,
+		DriverName:    "godror",
+		Dialect:       "oracle",
+		SlowSQLMillis: config.GetInt("database.slowSqlMillis"),
+		MaxOpenConns:  config.GetInt("database.maxConn"),
+		MaxIdleConns:  config.GetInt("database.maxIdle"),
+	}
+
+	MainDB, err = zorm.NewDBDao(dbConfig)
+	if err != nil {
+		logger.Fatal("数据库创建失败! %v", err)
+	}
+}
+
+func initDm() {
+	var err error
+	dsn := fmt.Sprintf(
+		"dm://%s:%s@%s:%d",
+		config.GetString("database.username"),
+		config.GetString("database.password"),
+		config.GetString("database.address"),
+		config.GetInt("database.port"),
+	)
+	dbConfig := &zorm.DataSourceConfig{
+		DSN:           dsn,
+		DriverName:    "dm",
+		Dialect:       "dm",
+		SlowSQLMillis: config.GetInt("database.slowSqlMillis"),
+		MaxOpenConns:  config.GetInt("database.maxConn"),
+		MaxIdleConns:  config.GetInt("database.maxIdle"),
+	}
+
+	MainDB, err = zorm.NewDBDao(dbConfig)
+	if err != nil {
+		logger.Fatal("数据库创建失败! %v", err)
+	}
+}
+
+func initPostgres() {
+	var err error
+	sslMode := "disabled"
+	if config.IsSet("database.sslMode") {
+		sslMode = config.GetString("database.sslMode")
+	}
+	dsn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		config.GetString("database.address"),
+		config.GetInt("database.port"),
+		config.GetString("database.username"),
+		config.GetString("database.password"),
+		config.GetString("database.dbName"),
+		sslMode,
+	)
+	dbConfig := &zorm.DataSourceConfig{
+		DSN:           dsn,
+		DriverName:    "postgres",
+		Dialect:       "postgresql",
+		SlowSQLMillis: config.GetInt("database.slowSqlMillis"),
+		MaxOpenConns:  config.GetInt("database.maxConn"),
+		MaxIdleConns:  config.GetInt("database.maxIdle"),
+	}
+
+	MainDB, err = zorm.NewDBDao(dbConfig)
+	if err != nil {
+		logger.Fatal("数据库创建失败! %v", err)
+	}
+}
+
+func initMysql() {
+	var err error
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true",
+		config.GetString("database.username"),
+		config.GetString("database.password"),
+		config.GetString("database.address"),
+		config.GetInt("database.port"),
+		config.GetString("database.dbName"),
+	)
+	if config.IsSet("database.charset") {
+		dsn += "&charset=" + config.GetString("database.charset")
+	}
+
+	dbConfig := &zorm.DataSourceConfig{
+		DSN:           dsn,
+		DriverName:    "mysql",
+		Dialect:       "mysql",
+		SlowSQLMillis: config.GetInt("database.slowSqlMillis"),
+		MaxOpenConns:  config.GetInt("database.maxConn"),
+		MaxIdleConns:  config.GetInt("database.maxIdle"),
+	}
+
+	MainDB, err = zorm.NewDBDao(dbConfig)
+	if err != nil {
+		logger.Fatal("数据库创建失败! %v", err)
+	}
 }

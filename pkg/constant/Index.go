@@ -1,6 +1,7 @@
 package constant
 
 const (
-	JWT_SECRET  = "293jfldsa9fjdvnadaksfjaserf"
-	JWT_CONTEXT = "jwt-subject"
+	JwtSecret     = "293jfldsa9fjdvnadaksfjaserf"
+	JwtContext    = "jwt-subject"
+	RequestUserId = "userId"
 )

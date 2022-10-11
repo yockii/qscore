@@ -5,17 +5,17 @@ import (
 	jwtware "github.com/gofiber/jwt/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gomodule/redigo/redis"
+	logger "github.com/sirupsen/logrus"
 
 	"github.com/yockii/qscore/pkg/authorization"
 	"github.com/yockii/qscore/pkg/cache"
 
 	"github.com/yockii/qscore/pkg/constant"
-	"github.com/yockii/qscore/pkg/logger"
 )
 
 var Jwtware = jwtware.New(jwtware.Config{
-	SigningKey:    []byte(constant.JWT_SECRET),
-	ContextKey:    constant.JWT_CONTEXT,
+	SigningKey:    []byte(constant.JwtSecret),
+	ContextKey:    constant.JwtContext,
 	SigningMethod: "HS256",
 	TokenLookup:   "header:Authorization,cookie:token",
 	ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -27,7 +27,7 @@ var Jwtware = jwtware.New(jwtware.Config{
 	},
 	SuccessHandler: func(c *fiber.Ctx) error {
 		// 从jwt获取用户信息
-		jwtToken := c.Locals(constant.JWT_CONTEXT).(*jwt.Token)
+		jwtToken := c.Locals(constant.JwtContext).(*jwt.Token)
 		claims := jwtToken.Claims.(jwt.MapClaims)
 		uid := claims["uid"].(string)
 		sid := claims["sid"].(string)

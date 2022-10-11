@@ -3,11 +3,9 @@ package authorization
 import (
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
-	"xorm.io/xorm"
+	logger "github.com/sirupsen/logrus"
 
 	"github.com/yockii/qscore/pkg/constant"
-	"github.com/yockii/qscore/pkg/database"
-	"github.com/yockii/qscore/pkg/logger"
 )
 
 type authorizationService struct {
@@ -25,13 +23,13 @@ func Init() {
 	defaultService = &authorizationService{
 		superAdmin: constant.DefaultRoleName,
 	}
-	if err := defaultService.Initial(database.DB); err != nil {
-		logger.Panicf("初始化默认权限系统失败，系统不应在无权限安全保护状态下运行", err)
+	if err := defaultService.Initial(); err != nil {
+		logger.Panicf("初始化默认权限系统失败，系统不应在无权限安全保护状态下运行 %s", err)
 	}
 }
 
-func (s *authorizationService) Initial(db *xorm.Engine) error {
-	a, err := NewAdapter(db)
+func (s *authorizationService) Initial() error {
+	a, err := NewAdapter()
 	if err != nil {
 		return err
 	}
