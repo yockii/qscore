@@ -10,8 +10,6 @@ import (
 	"gitee.com/chunanyong/zorm"
 	"github.com/casbin/casbin/v2/model"
 	logger "github.com/sirupsen/logrus"
-
-	"github.com/yockii/qscore/pkg/util"
 )
 
 type adapter struct{}
@@ -98,7 +96,6 @@ func (a *adapter) SavePolicy(m model.Model) error {
 						logger.Error("策略规则必须是7个元素的数组", err)
 						continue
 					}
-					policy.Id = util.GenerateDatabaseID()
 					policies = append(policies, policy)
 				}
 			}
@@ -110,7 +107,6 @@ func (a *adapter) SavePolicy(m model.Model) error {
 					logger.Error("关系规则必须是2个元素的数组", err)
 					continue
 				}
-				role.Id = util.GenerateDatabaseID()
 				roles = append(roles, role)
 			}
 		}
@@ -141,7 +137,6 @@ func (a *adapter) parseRelation(relationType string, rule []string) (*AuthorizeR
 		gt, _ = strconv.Atoi(relationType[1:])
 	}
 	role := &AuthorizeRelationship{
-		Id:              util.GenerateDatabaseID(),
 		RelationType:    gt,
 		SubjectId:       rule[0],
 		ParentSubjectId: rule[1],
@@ -164,7 +159,6 @@ func (a *adapter) parsePolicy(policyType string, rule []string) (*AuthorizePolic
 	}
 	priority, _ := strconv.Atoi(rule[5])
 	policy := &AuthorizePolicy{
-		Id:           util.GenerateDatabaseID(),
 		PolicyType:   pt,
 		SubjectId:    rule[0],
 		ResourceCode: rule[1],
