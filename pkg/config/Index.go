@@ -11,15 +11,15 @@ type config struct {
 	*viper.Viper
 }
 
-var defaultConfig = &config{viper.New()}
+var DefaultInstance = &config{viper.New()}
 
 func init() {
-	defaultConfig.SetConfigName("config")
-	defaultConfig.AddConfigPath("./conf")
-	if err := defaultConfig.ReadInConfig(); err != nil {
+	DefaultInstance.SetConfigName("config")
+	DefaultInstance.AddConfigPath("./conf")
+	if err := DefaultInstance.ReadInConfig(); err != nil {
 		logger.Warnf("No config file: %s ", err)
 	}
-	defaultConfig.AutomaticEnv()
+	DefaultInstance.AutomaticEnv()
 }
 
 func (c *config) SetConfigName(name string) {
@@ -73,51 +73,51 @@ func (c *config) WatchConfig() {
 //////// 默认配置获取 //////
 
 func SetConfigName(name string) {
-	defaultConfig.SetConfigName(name)
+	DefaultInstance.SetConfigName(name)
 }
 func AddConfigPath(path string) {
-	defaultConfig.AddConfigPath(path)
+	DefaultInstance.AddConfigPath(path)
 }
 func ReadInConfig() error {
-	return defaultConfig.ReadInConfig()
+	return DefaultInstance.ReadInConfig()
 }
 func AutomaticEnv() {
-	defaultConfig.AutomaticEnv()
+	DefaultInstance.AutomaticEnv()
 }
 
 func GetString(key string) string {
-	return defaultConfig.GetString(key)
+	return DefaultInstance.GetString(key)
 }
 func GetInt(key string) int {
-	return defaultConfig.GetInt(key)
+	return DefaultInstance.GetInt(key)
 }
 func GetBool(key string) bool {
-	return defaultConfig.GetBool(key)
+	return DefaultInstance.GetBool(key)
 }
 func GetUint(key string) uint {
-	return defaultConfig.GetUint(key)
+	return DefaultInstance.GetUint(key)
 }
 func GetUint64(key string) uint64 {
-	return defaultConfig.GetUint64(key)
+	return DefaultInstance.GetUint64(key)
 }
 func GetFloat64(key string) float64 {
-	return defaultConfig.GetFloat64(key)
+	return DefaultInstance.GetFloat64(key)
 }
 func IsSet(key string) bool {
-	return defaultConfig.IsSet(key)
+	return DefaultInstance.IsSet(key)
 }
 func GetStringSlice(key string) []string {
-	return defaultConfig.GetStringSlice(key)
+	return DefaultInstance.GetStringSlice(key)
 }
 func GetIntSlice(key string) []int {
-	return defaultConfig.GetIntSlice(key)
+	return DefaultInstance.GetIntSlice(key)
 }
 func GetStringMapString(key string) map[string]string {
-	return defaultConfig.GetStringMapString(key)
+	return DefaultInstance.GetStringMapString(key)
 }
 func GetDuration(key string) time.Duration {
-	return defaultConfig.GetDuration(key)
+	return DefaultInstance.GetDuration(key)
 }
 func WatchConfig() {
-	defaultConfig.WatchConfig()
+	DefaultInstance.WatchConfig()
 }

@@ -25,7 +25,7 @@ const (
 func init() {
 	// logger
 	var logLevel logger.Level = logger.InfoLevel
-	if err := logLevel.UnmarshalText([]byte(defaultConfig.GetString("logger.level"))); err != nil {
+	if err := logLevel.UnmarshalText([]byte(DefaultInstance.GetString("logger.level"))); err != nil {
 		logger.Warnf("设置日志级别失败: %v, 将使用默认[info]级别", err)
 	}
 	logger.SetLevel(logLevel)
