@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"database/sql/driver"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -12,6 +14,25 @@ var SyncDomains []interface{}
 var DateTimeFormat = "2006-01-02 15:04:05"
 
 type DateTime time.Time
+
+// ////// database/sql 需要的方法
+func (t DateTime) String() string {
+	return time.Time(t).Format(DateTimeFormat)
+}
+func (t DateTime) Value() (driver.Value, error) {
+	if t.IsZero() {
+		return nil, nil
+	}
+	return time.Time(t), nil
+}
+func (t *DateTime) Scan(value interface{}) error {
+	timeValue, ok := value.(time.Time)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal time value:", value))
+	}
+	*t = DateTime(timeValue)
+	return nil
+}
 
 func (t DateTime) IsZero() bool {
 	return time.Time(t).IsZero()
