@@ -3,9 +3,11 @@ package server
 import (
 	"fmt"
 	"net"
+	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/template/html"
 	logger "github.com/sirupsen/logrus"
@@ -61,6 +63,11 @@ func (a *webApp) Static(dir string) {
 		Compress: true,
 	})
 }
+func (a *webApp) StaticFs(fs http.FileSystem) {
+	a.app.Use("/", filesystem.New(filesystem.Config{
+		Root: fs,
+	}))
+}
 func (a *webApp) Group(prefix string, needLogin, needRouterPermission bool) fiber.Router {
 	var handlers []fiber.Handler
 	if needLogin {
@@ -101,6 +108,9 @@ func Listener(ln net.Listener) error {
 }
 func Static(dir string) {
 	defaultApp.Static(dir)
+}
+func StaticFs(fs http.FileSystem) {
+	defaultApp.StaticFs(fs)
 }
 
 // StandardRouter 标准路由，需要登录、校验权限

@@ -6,7 +6,7 @@ import (
 
 	_ "gitee.com/chunanyong/dm"
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/godror/godror"
+	//_ "github.com/godror/godror"
 
 	_ "modernc.org/sqlite"
 
@@ -19,6 +19,7 @@ import (
 )
 
 var MainDB *zorm.DBDao
+var DbMap map[string]*zorm.DBDao
 
 func init() {
 	dbType := config.GetString("database.type")
@@ -34,22 +35,41 @@ func init() {
 	case "mysql":
 		initMysql()
 	case "sqlite":
-		initSqlite()
+		initMainSqlite()
 	default:
 		logger.Fatal("暂未开通配置的数据库类型")
 	}
+	DbMap = make(map[string]*zorm.DBDao)
 }
 
-func initSqlite() {
+func initMainSqlite() {
 	var err error
-	MainDB, err = zorm.NewDBDao(&zorm.DataSourceConfig{
+	MainDB, err = initSqlite(config.GetString("database.address"))
+	if err != nil {
+		logger.Fatal("数据库创建失败! %v", err)
+	}
+}
+
+func InitSqlite(sourceName, fileName string) (*zorm.DBDao, error) {
+	var err error
+	dao, has := DbMap[sourceName]
+	if !has {
+		dao, err = initSqlite(fileName)
+	}
+	return dao, err
+}
+
+func initSqlite(fileName string) (*zorm.DBDao, error) {
+	dao, err := zorm.NewDBDao(&zorm.DataSourceConfig{
 		DSN:        config.GetString("database.address"),
 		DriverName: "sqlite",
 		Dialect:    "sqlite",
 	})
 	if err != nil {
-		logger.Fatal("数据库创建失败! %v", err)
+		logger.Errorln("数据库创建失败! ", err)
+		return nil, err
 	}
+	return dao, nil
 }
 
 func initKingbase() {
