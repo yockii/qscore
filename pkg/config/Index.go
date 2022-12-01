@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"time"
 
 	logger "github.com/sirupsen/logrus"
@@ -18,6 +19,9 @@ func init() {
 	DefaultInstance.AddConfigPath("./conf")
 	if err := DefaultInstance.ReadInConfig(); err != nil {
 		logger.Warnf("No config file: %s ", err)
+		os.MkdirAll("./conf", os.ModePerm)
+		f, _ := os.Create("./conf/config.toml")
+		defer f.Close()
 	}
 	DefaultInstance.AutomaticEnv()
 }
