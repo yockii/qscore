@@ -21,7 +21,7 @@ import (
 var MainDB *zorm.DBDao
 var DbMap map[string]*zorm.DBDao
 
-func init() {
+func InitSysDb() {
 	dbType := config.GetString("database.type")
 	switch strings.ToLower(dbType) {
 	case "oracle":
