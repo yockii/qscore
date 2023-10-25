@@ -11,9 +11,7 @@ type RouterController interface {
 	InitManage()
 }
 
-type Controller[T Model, D BaseDomain[T]] interface {
-	NewModel() T
-	NewDomain() D
+type Controller[T Model, D Domain[T]] interface {
 	Add(ctx *fiber.Ctx) error
 	Update(ctx *fiber.Ctx) error
 	Delete(ctx *fiber.Ctx) error
@@ -22,12 +20,12 @@ type Controller[T Model, D BaseDomain[T]] interface {
 	GetService() Service[T]
 }
 
-type BaseController[T Model, D BaseDomain[T]] struct {
+type BaseController[T Model, D Domain[T]] struct {
 	Controller[T, D]
 }
 
 func (c *BaseController[T, D]) Add(ctx *fiber.Ctx) error {
-	instance := c.NewModel()
+	instance := *new(T)
 	if err := ctx.BodyParser(instance); err != nil {
 		logger.Errorln(err)
 		return ctx.JSON(&server.CommonResponse{
@@ -61,7 +59,7 @@ func (c *BaseController[T, D]) Add(ctx *fiber.Ctx) error {
 }
 
 func (c *BaseController[T, D]) Update(ctx *fiber.Ctx) error {
-	instance := c.NewModel()
+	instance := *new(T)
 
 	if err := ctx.BodyParser(instance); err != nil {
 		logger.Errorln(err)
@@ -89,7 +87,7 @@ func (c *BaseController[T, D]) Update(ctx *fiber.Ctx) error {
 }
 
 func (c *BaseController[T, D]) Delete(ctx *fiber.Ctx) error {
-	instance := c.NewModel()
+	instance := *new(T)
 
 	if err := ctx.BodyParser(instance); err != nil {
 		logger.Errorln(err)
@@ -117,7 +115,7 @@ func (c *BaseController[T, D]) Delete(ctx *fiber.Ctx) error {
 }
 
 func (c *BaseController[T, D]) Detail(ctx *fiber.Ctx) (err error) {
-	instance := c.NewModel()
+	instance := *new(T)
 
 	if err = ctx.QueryParser(instance); err != nil {
 		logger.Errorln(err)
@@ -144,7 +142,7 @@ func (c *BaseController[T, D]) Detail(ctx *fiber.Ctx) (err error) {
 }
 
 func (c *BaseController[T, D]) List(ctx *fiber.Ctx) error {
-	domainWithModel := c.NewDomain()
+	domainWithModel := *new(D)
 
 	if err := ctx.QueryParser(domainWithModel); err != nil {
 		logger.Errorln(err)

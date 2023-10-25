@@ -11,7 +11,6 @@ import (
 )
 
 type Service[T Model] interface {
-	Model() T
 	Add(instance T, tx ...*gorm.DB) (duplicated bool, err error)
 	Update(instance T, tx ...*gorm.DB) (count int64, err error)
 	Delete(instance T, tx ...*gorm.DB) (count int64, err error)
@@ -64,9 +63,9 @@ func (s *BaseService[T]) Update(instance T, tx ...*gorm.DB) (count int64, err er
 		return
 	}
 	if len(tx) > 0 {
-		err = tx[0].Model(s.Model()).Where(instance.UpdateConditionModel()).Updates(instance.UpdateModel()).Error
+		err = tx[0].Model(*new(T)).Where(instance.UpdateConditionModel()).Updates(instance.UpdateModel()).Error
 	} else {
-		err = database.DB.Model(s.Model()).Where(instance.UpdateConditionModel()).Updates(instance.UpdateModel()).Error
+		err = database.DB.Model(*new(T)).Where(instance.UpdateConditionModel()).Updates(instance.UpdateModel()).Error
 	}
 	if err != nil {
 		logger.Errorln(err)
@@ -81,9 +80,9 @@ func (s *BaseService[T]) Delete(instance T, tx ...*gorm.DB) (count int64, err er
 	}
 	var result *gorm.DB
 	if len(tx) > 0 {
-		result = tx[0].Model(s.Model()).Delete(instance)
+		result = tx[0].Model(*new(T)).Delete(instance)
 	} else {
-		result = database.DB.Model(s.Model()).Delete(instance)
+		result = database.DB.Model(*new(T)).Delete(instance)
 	}
 	err = result.Error
 	count = result.RowsAffected
@@ -107,7 +106,7 @@ func (*BaseService[T]) Instance(instance T) (result T, err error) {
 }
 
 func (s *BaseService[T]) List(condition T, paginate *server.Paginate[T], orderBy string, tcList map[string]*server.TimeCondition) (err error) {
-	tx := database.DB.Model(s.Model())
+	tx := database.DB.Model(*new(T))
 	if paginate == nil {
 		return errors.New("paginate不能为空")
 	}
