@@ -1,4 +1,4 @@
-package domain
+package database
 
 import (
 	"database/sql/driver"
@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 )
-
-var SyncDomains []interface{}
 
 var DateTimeFormat = "2006-01-02 15:04:05"
 
@@ -66,22 +64,4 @@ var DateTimeConverter = func(value string) reflect.Value {
 		return reflect.ValueOf(v)
 	}
 	return reflect.ValueOf(time.Time{})
-}
-
-type TimeCondition struct {
-	Start DateTime `json:"start,omitempty" query:"start"`
-	End   DateTime `json:"end,omitempty" query:"end"`
-}
-
-type CommonResponse struct {
-	Code int         `json:"code"`
-	Msg  string      `json:"msg,omitempty"`
-	Data interface{} `json:"data,omitempty"`
-}
-
-type Paginate struct {
-	Total  int         `json:"total"`
-	Offset int         `json:"offset"`
-	Limit  int         `json:"limit"`
-	Items  interface{} `json:"items"`
 }
