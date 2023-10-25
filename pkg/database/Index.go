@@ -2,209 +2,115 @@ package database
 
 import (
 	"fmt"
-	"strings"
-
-	_ "gitee.com/chunanyong/dm"
-	_ "github.com/go-sql-driver/mysql"
-	//_ "github.com/godror/godror"
-
-	_ "modernc.org/sqlite"
-
-	_ "github.com/lib/pq"
-	logger "github.com/sirupsen/logrus"
-
-	"gitee.com/chunanyong/zorm"
-
 	"github.com/yockii/qscore/pkg/config"
+	"strings"
+	"time"
+
+	"github.com/sirupsen/logrus"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 )
 
-var MainDB *zorm.DBDao
-var DbMap map[string]*zorm.DBDao
+const (
+	mysqlConnStringFmt = "%s:%s@tcp(%s:%d)/%s"
+	pgConnStringFmt    = "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
+)
 
-func InitSysDb() {
-	dbType := config.GetString("database.type")
-	switch strings.ToLower(dbType) {
-	case "oracle":
-		initOracle()
-	case "dm":
-		initDm()
-	case "pg", "postgres", "pgsql":
-		initPostgres()
-	case "kingbase":
-		initKingbase()
-	case "mysql":
-		initMysql()
-	case "sqlite":
-		initMainSqlite()
-	default:
-		logger.Fatal("暂未开通配置的数据库类型")
-	}
-	DbMap = make(map[string]*zorm.DBDao)
+func initDatabaseDefault() {
+	config.DefaultInstance.SetDefault("database.driver", "mysql")
+	config.DefaultInstance.SetDefault("database.host", "localhost")
+	config.DefaultInstance.SetDefault("database.user", "root")
+	config.DefaultInstance.SetDefault("database.password", "root")
+	config.DefaultInstance.SetDefault("database.db", "householder")
+	config.DefaultInstance.SetDefault("database.port", 3306)
+	config.DefaultInstance.SetDefault("database.prefix", "t_")
+	config.DefaultInstance.SetDefault("database.showSql", false)
 }
 
-func initMainSqlite() {
+var DB *gorm.DB
+
+func Initial() {
+	initDatabaseDefault()
+	InitDB(
+		config.GetString("database.driver"),
+		config.GetString("database.host"),
+		config.GetString("database.user"),
+		config.GetString("database.password"),
+		config.GetString("database.db"),
+		config.GetInt("database.port"),
+		config.GetString("database.prefix"),
+		config.GetString("logger.level"),
+	)
+}
+
+func InitDB(dbType, host, user, password, dbName string, port int, prefix string, logLevel string) {
 	var err error
-	MainDB, err = initSqlite(config.GetString("database.address"))
+	if dbType == "mysql" {
+		DB, err = gorm.Open(mysql.Open(fmt.Sprintf(mysqlConnStringFmt,
+			user, password, host, port, dbName)), &gorm.Config{})
+	} else if dbType == "pg" || dbType == "postgres" {
+		DB, err = gorm.Open(postgres.Open(fmt.Sprintf(pgConnStringFmt,
+			host, port, user, password, dbName)), &gorm.Config{})
+	} else if dbType == "sqlite" {
+		DB, err = gorm.Open(sqlite.Open(host), &gorm.Config{})
+	} else {
+		logrus.Fatalf("不支持的数据库: %s", dbType)
+	}
 	if err != nil {
-		logger.Fatal("数据库创建失败! %v", err)
+		logrus.Fatalf("数据库连接失败! %v", err)
 	}
-}
-
-func InitSqlite(sourceName, fileName string) (*zorm.DBDao, error) {
-	var err error
-	dao, has := DbMap[sourceName]
-	if !has {
-		dao, err = initSqlite(fileName)
+	DB.Config.NamingStrategy = schema.NamingStrategy{
+		TablePrefix:   prefix,
+		SingularTable: true,
 	}
-	return dao, err
-}
+	DB.Config.SkipDefaultTransaction = true
 
-func initSqlite(fileName string) (*zorm.DBDao, error) {
-	dao, err := zorm.NewDBDao(&zorm.DataSourceConfig{
-		DSN:        config.GetString("database.address"),
-		DriverName: "sqlite",
-		Dialect:    "sqlite",
+	slowThreshold := time.Second
+	level := logger.Silent
+	switch strings.ToLower(logLevel) {
+	case "error":
+		level = logger.Error
+	case "warn":
+		level = logger.Warn
+	case "info":
+		level = logger.Info
+		slowThreshold = 0
+	}
+
+	newLogger := logger.New(logrus.StandardLogger(), logger.Config{
+		SlowThreshold:             slowThreshold,
+		LogLevel:                  level,
+		IgnoreRecordNotFoundError: true,
 	})
-	if err != nil {
-		logger.Errorln("数据库创建失败! ", err)
-		return nil, err
-	}
-	return dao, nil
+	DB.Config.Logger = newLogger
+
+	//if logLevel != "" {
+	//	switch strings.ToLower(logLevel) {
+	//	case "error":
+	//		DB.Config.Logger.LogMode(logger.Error)
+	//	case "warn":
+	//		DB.Config.Logger.LogMode(logger.Warn)
+	//	case "info":
+	//		DB.Config.Logger.LogMode(logger.Info)
+	//	default:
+	//		DB.Config.Logger.LogMode(logger.Silent)
+	//	}
+	//}
 }
 
-func initKingbase() {
-	var err error
-	sslMode := "disabled"
-	if config.IsSet("database.sslMode") {
-		sslMode = config.GetString("database.sslMode")
-	}
-	dsn := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		config.GetString("database.address"),
-		config.GetInt("database.port"),
-		config.GetString("database.username"),
-		config.GetString("database.password"),
-		config.GetString("database.dbName"),
-		sslMode,
-	)
-	dbConfig := &zorm.DataSourceConfig{
-		DSN:           dsn,
-		DriverName:    "postgres", // kingbase
-		Dialect:       "postgres", // kingbase
-		SlowSQLMillis: config.GetInt("database.slowSqlMillis"),
-		MaxOpenConns:  config.GetInt("database.maxConn"),
-		MaxIdleConns:  config.GetInt("database.maxIdle"),
-	}
-
-	MainDB, err = zorm.NewDBDao(dbConfig)
-	if err != nil {
-		logger.Fatal("数据库创建失败! %v", err)
+func Close() {
+	db, _ := DB.DB()
+	if db != nil {
+		db.Close()
 	}
 }
 
-func initOracle() {
-	var err error
-	dsn := fmt.Sprintf(`user="%s" password="%s" connectString="%s:%d/%s"`,
-		config.GetString("database.username"),
-		config.GetString("database.password"),
-		config.GetString("database.address"),
-		config.GetInt("database.port"),
-		config.GetString("database.dbName"),
-	)
-	dbConfig := &zorm.DataSourceConfig{
-		DSN:           dsn,
-		DriverName:    "godror",
-		Dialect:       "oracle",
-		SlowSQLMillis: config.GetInt("database.slowSqlMillis"),
-		MaxOpenConns:  config.GetInt("database.maxConn"),
-		MaxIdleConns:  config.GetInt("database.maxIdle"),
-	}
-
-	MainDB, err = zorm.NewDBDao(dbConfig)
-	if err != nil {
-		logger.Fatal("数据库创建失败! %v", err)
-	}
-}
-
-func initDm() {
-	var err error
-	dsn := fmt.Sprintf(
-		"dm://%s:%s@%s:%d",
-		config.GetString("database.username"),
-		config.GetString("database.password"),
-		config.GetString("database.address"),
-		config.GetInt("database.port"),
-	)
-	dbConfig := &zorm.DataSourceConfig{
-		DSN:           dsn,
-		DriverName:    "dm",
-		Dialect:       "dm",
-		SlowSQLMillis: config.GetInt("database.slowSqlMillis"),
-		MaxOpenConns:  config.GetInt("database.maxConn"),
-		MaxIdleConns:  config.GetInt("database.maxIdle"),
-	}
-
-	MainDB, err = zorm.NewDBDao(dbConfig)
-	if err != nil {
-		logger.Fatal("数据库创建失败! %v", err)
-	}
-}
-
-func initPostgres() {
-	var err error
-	sslMode := "disabled"
-	if config.IsSet("database.sslMode") {
-		sslMode = config.GetString("database.sslMode")
-	}
-	dsn := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		config.GetString("database.address"),
-		config.GetInt("database.port"),
-		config.GetString("database.username"),
-		config.GetString("database.password"),
-		config.GetString("database.dbName"),
-		sslMode,
-	)
-	dbConfig := &zorm.DataSourceConfig{
-		DSN:           dsn,
-		DriverName:    "postgres",
-		Dialect:       "postgresql",
-		SlowSQLMillis: config.GetInt("database.slowSqlMillis"),
-		MaxOpenConns:  config.GetInt("database.maxConn"),
-		MaxIdleConns:  config.GetInt("database.maxIdle"),
-	}
-
-	MainDB, err = zorm.NewDBDao(dbConfig)
-	if err != nil {
-		logger.Fatal("数据库创建失败! %v", err)
-	}
-}
-
-func initMysql() {
-	var err error
-	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?parseTime=true",
-		config.GetString("database.username"),
-		config.GetString("database.password"),
-		config.GetString("database.address"),
-		config.GetInt("database.port"),
-		config.GetString("database.dbName"),
-	)
-	if config.IsSet("database.charset") {
-		dsn += "&charset=" + config.GetString("database.charset")
-	}
-
-	dbConfig := &zorm.DataSourceConfig{
-		DSN:           dsn,
-		DriverName:    "mysql",
-		Dialect:       "mysql",
-		SlowSQLMillis: config.GetInt("database.slowSqlMillis"),
-		MaxOpenConns:  config.GetInt("database.maxConn"),
-		MaxIdleConns:  config.GetInt("database.maxIdle"),
-	}
-
-	MainDB, err = zorm.NewDBDao(dbConfig)
-	if err != nil {
-		logger.Fatal("数据库创建失败! %v", err)
-	}
+// AutoMigrate 自动迁移
+func AutoMigrate(models ...interface{}) error {
+	return DB.AutoMigrate(models...)
+	// 不能直接使用db的迁移，要增加表注释, 如何处理?兼容不同数据库
 }
