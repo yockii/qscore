@@ -53,7 +53,7 @@ func InitWebApp(views fiber.Views) *WebApp {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		Views:                 views,
-		BodyLimit: 1 * 1024 * 1024 * 1024,
+		BodyLimit:             1 * 1024 * 1024 * 1024,
 	})
 	app.Use(recover.New(recover.Config{
 		EnableStackTrace: true,
