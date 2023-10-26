@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"github.com/yockii/qscore/pkg/common"
 	"github.com/yockii/qscore/pkg/config"
 	"strings"
 	"time"
@@ -110,7 +111,27 @@ func Close() {
 }
 
 // AutoMigrate 自动迁移
-func AutoMigrate(models ...interface{}) error {
-	return DB.AutoMigrate(models...)
+func AutoMigrate() error {
 	// 不能直接使用db的迁移，要增加表注释, 如何处理?兼容不同数据库
+	if config.GetString("database.driver") == "mysql" {
+		migrator := DB.Migrator()
+		for _, m := range common.Models {
+			if !migrator.HasTable(m) {
+				if err := DB.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='"+m.TableComment()+"';").AutoMigrate(m); err != nil {
+					return err
+				}
+			} else {
+				_ = migrator.AutoMigrate(m)
+			}
+		}
+	} else {
+		migrator := DB.Migrator()
+		var mList []interface{}
+		for _, m := range common.Models {
+			mList = append(mList, m)
+		}
+		err := migrator.AutoMigrate(mList...)
+		return err
+	}
+	return nil
 }

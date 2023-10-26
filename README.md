@@ -31,6 +31,10 @@ type SomeModel struct {
     DeleteTime  gorm.DeletedAt `json:"deleteTime,omitempty" gorm:"index"`
 }
 
+func init() {
+	common.Models = append(common.Models, &SomeModel{})
+}
+
 // 按照需要实现common.Model的接口，可参考common.BaseModel的实现
 ```
 ### 建立domain
@@ -63,16 +67,20 @@ func newSomeService() *someService {
 ### 建立controller
 作为对外接口实现，需要继承BaseController，基础的增删改查可以无需再写，若有其他逻辑，可自行实现
 ```go
-var SomeController = &someController{}
 type someController struct {
     common.BaseController[*model.SomeModel, *domain.SomeDomain]
 }
 func init() {
+    c := new(someController)
+    c.BaseController = common.BaseController[*model.SomeModel, *domain.SomeDomain]{
+        Controller: c,
+    }
+    
     // 初始化路由
     r := server.Group("/api/v1/some")
-    r.Get("/list", SomeController.List)
-    r.Get("/detail", SomeController.Detail)
-    r.Post("/add", SomeController.Add)
+    r.Get("/list", c.List) // 可以自行加入中间件，如权限校验拦截等等，如 r.Get("/list", middleware.Auth, c.List)
+    r.Get("/detail", c.Detail)
+    r.Post("/add", c.Add)
     ...
 }
 func (*someController) GetService() common.Service[*model.SomeModel] {
@@ -94,7 +102,9 @@ func main() {
 	// 雪花算法初始节点信息
     _ = util.InitNode(0)
 	
-	// 初始化数据，自行编码
+	// 初始化数据库，需要将model加入到common.Models中
+	database.AutoMigrate()
+	
 	
 	// 启动定时任务
 	task.Start()
