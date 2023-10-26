@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"github.com/yockii/qscore/pkg/config"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -10,6 +11,23 @@ import (
 var Prefix string
 var Redis *redis.Pool
 var enabled bool
+
+func init() {
+	config.DefaultInstance.SetDefault("redis.app", "qs")
+	config.DefaultInstance.SetDefault("redis.host", "localhost")
+	config.DefaultInstance.SetDefault("redis.port", "6379")
+}
+
+func InitWithDefault() {
+	InitRedis(
+		config.GetString("redis.app"),
+		config.GetString("redis.host"),
+		config.GetString("redis.password"),
+		config.GetInt("redis.port"),
+		config.GetInt("redis.maxIdle"),
+		config.GetInt("redis.maxActive"),
+	)
+}
 
 func InitRedis(redisPrefix, host, password string, port, maxIdle, maxActive int, options ...redis.DialOption) {
 	Prefix = redisPrefix
