@@ -6,11 +6,6 @@ import (
 	"github.com/yockii/qscore/pkg/server"
 )
 
-type RouterController interface {
-	// 初始化管理路由
-	InitManage()
-}
-
 type Controller[T Model, D Domain[T]] interface {
 	Add(ctx *fiber.Ctx) error
 	Update(ctx *fiber.Ctx) error
