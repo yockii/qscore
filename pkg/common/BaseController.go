@@ -14,6 +14,8 @@ type Controller[T database.Model, D Domain[T]] interface {
 	Detail(ctx *fiber.Ctx) error
 	List(ctx *fiber.Ctx) error
 	GetService() Service[T]
+	NewModel() T
+	NewDomain() D
 }
 
 type BaseController[T database.Model, D Domain[T]] struct {
@@ -21,7 +23,7 @@ type BaseController[T database.Model, D Domain[T]] struct {
 }
 
 func (c *BaseController[T, D]) Add(ctx *fiber.Ctx) error {
-	instance := *new(T)
+	instance := c.NewModel()
 	if err := ctx.BodyParser(instance); err != nil {
 		logger.Errorln(err)
 		return ctx.JSON(&server.CommonResponse{
@@ -55,7 +57,7 @@ func (c *BaseController[T, D]) Add(ctx *fiber.Ctx) error {
 }
 
 func (c *BaseController[T, D]) Update(ctx *fiber.Ctx) error {
-	instance := *new(T)
+	instance := c.NewModel()
 
 	if err := ctx.BodyParser(instance); err != nil {
 		logger.Errorln(err)
@@ -83,7 +85,7 @@ func (c *BaseController[T, D]) Update(ctx *fiber.Ctx) error {
 }
 
 func (c *BaseController[T, D]) Delete(ctx *fiber.Ctx) error {
-	instance := *new(T)
+	instance := c.NewModel()
 
 	if err := ctx.BodyParser(instance); err != nil {
 		logger.Errorln(err)
@@ -111,7 +113,7 @@ func (c *BaseController[T, D]) Delete(ctx *fiber.Ctx) error {
 }
 
 func (c *BaseController[T, D]) Detail(ctx *fiber.Ctx) (err error) {
-	instance := *new(T)
+	instance := c.NewModel()
 
 	if err = ctx.QueryParser(instance); err != nil {
 		logger.Errorln(err)
@@ -138,7 +140,7 @@ func (c *BaseController[T, D]) Detail(ctx *fiber.Ctx) (err error) {
 }
 
 func (c *BaseController[T, D]) List(ctx *fiber.Ctx) error {
-	domainWithModel := *new(D)
+	domainWithModel := c.NewDomain()
 
 	if err := ctx.QueryParser(domainWithModel); err != nil {
 		logger.Errorln(err)
