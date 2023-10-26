@@ -22,7 +22,9 @@ const (
 	minimumCallerDepth int = 4
 )
 
-func init() {
+func InitialLogger() {
+	initLoggerDefault()
+
 	// logger
 	var logLevel logger.Level = logger.InfoLevel
 	if err := logLevel.UnmarshalText([]byte(DefaultInstance.GetString("logger.level"))); err != nil {
@@ -35,12 +37,19 @@ func init() {
 	setLoggerRotateHook()
 }
 
+func initLoggerDefault() {
+	DefaultInstance.SetDefault("logger.level", "debug")
+	DefaultInstance.SetDefault("moduleName", "main")
+}
+
 func setLoggerRotateHook() {
 	loggerDir := GetString("logger.dir")
 	if loggerDir == "" {
 		loggerDir = "logs"
 	}
 	p, _ := filepath.Abs(loggerDir)
+
+	p = path.Join(p, GetString("moduleName"))
 	if _, err := os.Stat(p); os.IsNotExist(err) {
 		if os.MkdirAll(p, os.ModePerm) != nil {
 			logger.Warn("创建日志文件夹失败!")
