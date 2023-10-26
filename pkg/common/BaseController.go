@@ -3,10 +3,11 @@ package common
 import (
 	"github.com/gofiber/fiber/v2"
 	logger "github.com/sirupsen/logrus"
+	"github.com/yockii/qscore/pkg/database"
 	"github.com/yockii/qscore/pkg/server"
 )
 
-type Controller[T Model, D Domain[T]] interface {
+type Controller[T database.Model, D Domain[T]] interface {
 	Add(ctx *fiber.Ctx) error
 	Update(ctx *fiber.Ctx) error
 	Delete(ctx *fiber.Ctx) error
@@ -15,7 +16,7 @@ type Controller[T Model, D Domain[T]] interface {
 	GetService() Service[T]
 }
 
-type BaseController[T Model, D Domain[T]] struct {
+type BaseController[T database.Model, D Domain[T]] struct {
 	Controller[T, D]
 }
 

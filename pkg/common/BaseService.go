@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type Service[T Model] interface {
+type Service[T database.Model] interface {
 	Add(instance T, tx ...*gorm.DB) (duplicated bool, err error)
 	Update(instance T, tx ...*gorm.DB) (count int64, err error)
 	Delete(instance T, tx ...*gorm.DB) (count int64, err error)
@@ -18,7 +18,7 @@ type Service[T Model] interface {
 	List(condition T, paginate *server.Paginate[T], orderBy string, tcList map[string]*server.TimeCondition) (err error)
 }
 
-type BaseService[T Model] struct {
+type BaseService[T database.Model] struct {
 	Service[T]
 }
 

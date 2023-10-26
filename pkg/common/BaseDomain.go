@@ -1,14 +1,17 @@
 package common
 
-import "github.com/yockii/qscore/pkg/server"
+import (
+	"github.com/yockii/qscore/pkg/database"
+	"github.com/yockii/qscore/pkg/server"
+)
 
-type Domain[T Model] interface {
+type Domain[T database.Model] interface {
 	GetModel() T
 	GetOrderBy() string
 	GetTimeConditionList() map[string]*server.TimeCondition
 }
 
-type BaseDomain[T Model] struct {
+type BaseDomain[T database.Model] struct {
 	OrderBy string `json:"orderBy,omitempty"`
 }
 

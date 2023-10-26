@@ -23,7 +23,7 @@ go get -u github.com/yockii/qscore@lowcode
 BaseModel中已经定义了ID主键
 ```go
 type SomeModel struct {
-	common.BaseModel
+	database.BaseModel
 	// ...自定义字段，注意本框架使用gorm，故需要使用gorm的tag
 	Name        string         `json:"name" gorm:"size:100;comment:名称"`
 	CreateTime  int64          `json:"createTime" gorm:"autoCreateTime:milli"`
@@ -32,7 +32,7 @@ type SomeModel struct {
 }
 
 func init() {
-	common.Models = append(common.Models, &SomeModel{})
+	database.Models = append(database.Models, &SomeModel{})
 }
 
 // 按照需要实现common.Model的接口，可参考common.BaseModel的实现
