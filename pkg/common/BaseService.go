@@ -64,11 +64,14 @@ func (s *BaseService[T]) Update(instance T, tx ...*gorm.DB) (count int64, err er
 		err = errors.New(lackedFields + " is required")
 		return
 	}
+	var result *gorm.DB
 	if len(tx) > 0 {
-		err = tx[0].Model(s.Model()).Where(instance.UpdateConditionModel()).Updates(instance.UpdateModel()).Error
+		result = tx[0].Model(s.Model()).Where(instance.UpdateConditionModel()).Updates(instance.UpdateModel())
 	} else {
-		err = database.DB.Model(s.Model()).Where(instance.UpdateConditionModel()).Updates(instance.UpdateModel()).Error
+		result = database.DB.Model(s.Model()).Where(instance.UpdateConditionModel()).Updates(instance.UpdateModel())
 	}
+	count = result.RowsAffected
+	err = result.Error
 	if err != nil {
 		logger.Errorln(err)
 	}
