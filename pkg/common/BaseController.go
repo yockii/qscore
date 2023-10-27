@@ -87,7 +87,7 @@ func (c *BaseController[T, D]) Update(ctx *fiber.Ctx) error {
 func (c *BaseController[T, D]) Delete(ctx *fiber.Ctx) error {
 	instance := c.NewModel()
 
-	if err := ctx.BodyParser(instance); err != nil {
+	if err := ctx.QueryParser(instance); err != nil {
 		logger.Errorln(err)
 		return ctx.JSON(&server.CommonResponse{
 			Code: server.ResponseCodeParamParseError,
