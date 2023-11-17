@@ -65,6 +65,7 @@ func setLoggerRotateHook() {
 	rotationTime := 24 * time.Hour
 
 	lfHook := lfshook.NewHook(lfshook.WriterMap{
+		logger.TraceLevel: writer(p, logFileRegex, "trace", rotatedNum, rotationTime),
 		logger.DebugLevel: writer(p, logFileRegex, "debug", rotatedNum, rotationTime),
 		logger.InfoLevel:  writer(p, logFileRegex, "info", rotatedNum, rotationTime),
 		logger.WarnLevel:  writer(p, logFileRegex, "warn", rotatedNum, rotationTime),

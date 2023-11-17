@@ -20,7 +20,9 @@ var defaultApp *WebApp
 
 func init() {
 	initServerDefault()
+}
 
+func InitServer() {
 	if config.GetString("server.viewsDir") != "" {
 		extension := config.GetString("server.viewExtension")
 		if extension == "" {
@@ -30,6 +32,10 @@ func init() {
 	} else {
 		defaultApp = InitWebApp(nil)
 	}
+}
+
+func InitServerWithViews(views fiber.Views) {
+	defaultApp = InitWebApp(views)
 }
 
 func initServerDefault() {
