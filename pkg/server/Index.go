@@ -13,10 +13,11 @@ import (
 )
 
 type WebApp struct {
-	app *fiber.App
+	app        *fiber.App
+	ViewEngine fiber.Views
 }
 
-var defaultApp *WebApp
+var DefaultWebApp *WebApp
 
 func init() {
 	initServerDefault()
@@ -28,14 +29,14 @@ func InitServer() {
 		if extension == "" {
 			extension = ".html"
 		}
-		defaultApp = InitWebApp(html.New(config.GetString("server.viewsDir"), extension))
+		DefaultWebApp = InitWebApp(html.New(config.GetString("server.viewsDir"), extension))
 	} else {
-		defaultApp = InitWebApp(nil)
+		DefaultWebApp = InitWebApp(nil)
 	}
 }
 
 func InitServerWithViews(views fiber.Views) {
-	defaultApp = InitWebApp(views)
+	DefaultWebApp = InitWebApp(views)
 }
 
 func initServerDefault() {
@@ -74,7 +75,10 @@ func InitWebApp(views fiber.Views) *WebApp {
 		AllowCredentials: true,
 	}))
 
-	return &WebApp{app}
+	return &WebApp{
+		app:        app,
+		ViewEngine: views,
+	}
 }
 
 func (a *WebApp) Listener(ln net.Listener) error {
@@ -115,36 +119,36 @@ func (a *WebApp) Shutdown() error {
 }
 
 func Listener(ln net.Listener) error {
-	return defaultApp.Listener(ln)
+	return DefaultWebApp.Listener(ln)
 }
 func Static(dir string) {
-	defaultApp.Static(dir)
+	DefaultWebApp.Static(dir)
 }
 
 func Use(args ...interface{}) fiber.Router {
-	return defaultApp.Use(args...)
+	return DefaultWebApp.Use(args...)
 }
 func Group(path string, handlers ...fiber.Handler) fiber.Router {
-	return defaultApp.Group(path, handlers...)
+	return DefaultWebApp.Group(path, handlers...)
 }
 func All(path string, handlers ...fiber.Handler) fiber.Router {
-	return defaultApp.All(path, handlers...)
+	return DefaultWebApp.All(path, handlers...)
 }
 func Get(path string, handlers ...fiber.Handler) fiber.Router {
-	return defaultApp.Get(path, handlers...)
+	return DefaultWebApp.Get(path, handlers...)
 }
 func Put(path string, handlers ...fiber.Handler) fiber.Router {
-	return defaultApp.Put(path, handlers...)
+	return DefaultWebApp.Put(path, handlers...)
 }
 func Post(path string, handlers ...fiber.Handler) fiber.Router {
-	return defaultApp.Post(path, handlers...)
+	return DefaultWebApp.Post(path, handlers...)
 }
 func Delete(path string, handlers ...fiber.Handler) fiber.Router {
-	return defaultApp.Delete(path, handlers...)
+	return DefaultWebApp.Delete(path, handlers...)
 }
 func Start() error {
-	return defaultApp.Start(":" + config.GetString("server.port"))
+	return DefaultWebApp.Start(":" + config.GetString("server.port"))
 }
 func Shutdown() error {
-	return defaultApp.Shutdown()
+	return DefaultWebApp.Shutdown()
 }
